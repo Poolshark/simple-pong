@@ -1,20 +1,24 @@
-import os
 import sys
-from dotenv import load_dotenv
+import yaml
 from pong.simplePong import SimplePong
 from pong.environment import SimplifiedPongEnv
 
-
-load_dotenv()
+# Load parameters from yaml file
+with open('input.yml', 'r') as file:
+    params = yaml.safe_load(file)
 
 # Hyperparameters
-EPISODES = int(os.getenv("EPISODES"))
-GRID_SIZE = int(os.getenv("GRID_SIZE"))
-BALL_SPEED = float(os.getenv("BALL_SPEED"))
+EPISODES = params['EPISODES']
+GRID_SIZE = params['GRID_SIZE']
+BALL_SPEED = params['BALL_SPEED']
+ALPHA = params['ALPHA']
+GAMMA = params['GAMMA']
+EPSILON = params['EPSILON']
+WINDOW_SIZE = params['WINDOW_SIZE']
 
 # Check if all hyperparameters are set
-if not all(os.getenv(param) for param in ["EPISODES", "GRID_SIZE", "BALL_SPEED"]):
-    print("Error: Some hyperparameters are not set in the .env file.")
+if not all(param in params for param in ["EPISODES", "GRID_SIZE", "BALL_SPEED", "ALPHA", "GAMMA", "EPSILON", "WINDOW_SIZE"]):
+    print("Error: Some hyperparameters are not set in input.yml")
     sys.exit(1)
 
 # (ball_x, ball_y, paddle_agent, paddle_opponent)
@@ -25,13 +29,16 @@ env = SimplifiedPongEnv(grid_size=GRID_SIZE, ball_speed=BALL_SPEED)
 trainer = SimplePong(
     env=env,
     state_space_size=STATE_SPACE_SIZE,
+    alpha=ALPHA,
+    gamma=GAMMA,
+    epsilon=EPSILON,
 )
 
 # Train the agent
 trainer.train(episodes=EPISODES)
 
 # Plot learning curve
-trainer.plot_learning_curve(50)
+trainer.plot_learning_curve(WINDOW_SIZE)
 
 # Test and print results
 results = trainer.test(episodes=100)

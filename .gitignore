@@ -36,4 +36,4 @@ ENV/
 Thumbs.db 
 
 # Local Environment
-.env
+input.yml
