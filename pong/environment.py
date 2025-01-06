@@ -1,7 +1,7 @@
 import numpy as np
 
 class SimplifiedPongEnv:
-    def __init__(self, grid_size=10):
+    def __init__(self, grid_size=10, ball_speed=1):
         """
         Instantiate class.
 
@@ -9,11 +9,13 @@ class SimplifiedPongEnv:
         to instantiate.
 
         ##### Parameters
-        : grid_size -- The size of the Pong playing field (grid; default=10)
+        : grid_size  -- The size of the Pong playing field (grid; default=10)
+        : ball_speed -- Multiplier for ball velocity (default=1)
         """
 
         # Size of the playing field (grid_size x grid_size)
         self.grid_size = grid_size
+        self.ball_speed = ball_speed
         self.reset()
 
     def reset(self):
@@ -75,10 +77,17 @@ class SimplifiedPongEnv:
         elif self.ball_y > self.paddle_opponent and self.paddle_opponent < self.grid_size - 1:
             self.paddle_opponent += 1
 
-        # Update ball position
-        # s = v*t; t=1; => s=v
-        self.ball_x += self.ball_vx
-        self.ball_y += self.ball_vy
+        # Update ball position with speed multiplier and clamp to grid boundaries
+        self.ball_x = int(np.clip(
+            self.ball_x + self.ball_vx * self.ball_speed,
+            0,
+            self.grid_size - 1
+        ))
+        self.ball_y = int(np.clip(
+            self.ball_y + self.ball_vy * self.ball_speed,
+            0,
+            self.grid_size - 1
+        ))
 
         # Ball collision with top/bottom walls
         if self.ball_y == 0 or self.ball_y == self.grid_size - 1:

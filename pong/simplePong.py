@@ -9,6 +9,10 @@ class SimplePong:
     # need to be set as a parameter.
     ACTION_SPACE_SIZE = 3
 
+    # Maximum number of steps we consider so that the
+    # agent does not loose any games anymore.
+    MAX_STEPS = 100_000
+
     def __init__(self, env, state_space_size: Tuple[int, ...], alpha: float = 0.1, gamma: float = 0.99, epsilon: float = 0.1):
         """
         Instantiate class.
@@ -123,6 +127,9 @@ class SimplePong:
                     self.env.render()
                 state = next_state
                 steps += 1
+
+                if steps > self.MAX_STEPS:
+                    done = True
             
             test_steps.append(steps)
 
