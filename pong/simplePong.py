@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import List, Tuple
+from typing import List, Tuple, Dict
+from pong.algorithms import Algorithms
 
 class SimplePong:
     
@@ -13,7 +14,7 @@ class SimplePong:
     # agent does not loose any games anymore.
     MAX_STEPS = 100_000
 
-    def __init__(self, env, state_space_size: Tuple[int, ...], alpha: float = 0.1, gamma: float = 0.99, epsilon: float = 0.1):
+    def __init__(self, env, state_space_size: Tuple[int, ...], learning_params: Dict[str, float], algo: str = "Q"):
         """
         Instantiate class.
 
@@ -27,11 +28,25 @@ class SimplePong:
         
         # Initialise variables
         self.env = env
-        self.alpha = alpha
-        self.gamma = gamma
-        self.epsilon = epsilon
         self.Q = np.zeros(state_space_size + (self.ACTION_SPACE_SIZE,))
         self.total_steps: List[int] = []
+        self.learning_params = learning_params
+        self.algo = algo
+
+        if (algo == "Q"):
+            self.epsilon = learning_params["Q_EPSILON"]
+        elif (algo == "S"):
+            self.epsilon = learning_params["S_EPSILON"]
+
+
+        # # Q-learning params
+        # self.q_alpha = q_alpha
+        # self.q_gamma = q_gamma
+        # self.q_epsilon = q_epsilon
+
+        # # SARSA params
+        # self.s_alpha = s_alpha
+        # self.s_gamma = s_gamma
 
     def choose_action(self, state: tuple, training: bool = True) -> int:
         """
@@ -70,38 +85,45 @@ class SimplePong:
         : episodes -- The number of training episodes
         """
 
-        for episode in range(episodes):
-            state = tuple(self.env.reset())
-            done = False
-            current_episode_steps = 0
+        algo = Algorithms(episodes=episodes, simplePong=self)
 
-            while not done:
-                action = self.choose_action(state)
-                next_state, reward, done = self.env.step(action)
-                next_state = tuple(next_state)
-                
-                # Update Q-value
-                best_next_action = np.argmax(self.Q[next_state])
-                self.Q[state][action] += self.alpha * (
-                    reward + self.gamma * self.Q[next_state][best_next_action] - self.Q[state][action]
-                )
-                
-                state = next_state
-                current_episode_steps += 1
+        if (self.algo == "Q"):
+            algo.q_learning()
+        elif (self.algo == "S"):
+            algo.sarsa()
 
-            self.total_steps.append(current_episode_steps)
+        # for episode in range(episodes):
+        #     state = tuple(self.env.reset())
+        #     done = False
+        #     current_episode_steps = 0
+
+        #     while not done:
+        #         action = self.choose_action(state)
+        #         next_state, reward, done = self.env.step(action)
+        #         next_state = tuple(next_state)
+                
+        #         # Update Q-value
+        #         best_next_action = np.argmax(self.Q[next_state])
+        #         self.Q[state][action] += self.alpha * (
+        #             reward + self.gamma * self.Q[next_state][best_next_action] - self.Q[state][action]
+        #         )
+                
+        #         state = next_state
+        #         current_episode_steps += 1
+
+        #     self.total_steps.append(current_episode_steps)
             
-            # Calculate and display a running average of the agent's performance
-            # every 50 episodes.
-            # A higher average means that the agent is surviving longer and thus
-            # if the average increases over time, the agent is improving.
-            # TODO - maybe add logic to auto adjust according to the episode size.
-            if (episode + 1) % 50 == 0:
-                avg_steps = np.mean(self.total_steps[-50:])
-                print(f"Episode {episode + 1}/{episodes} completed. "
-                      f"Average steps last 50 episodes: {avg_steps:.2f}")
+        #     # Calculate and display a running average of the agent's performance
+        #     # every 50 episodes.
+        #     # A higher average means that the agent is surviving longer and thus
+        #     # if the average increases over time, the agent is improving.
+        #     # TODO - maybe add logic to auto adjust according to the episode size.
+        #     if (episode + 1) % 50 == 0:
+        #         avg_steps = np.mean(self.total_steps[-50:])
+        #         print(f"Episode {episode + 1}/{episodes} completed. "
+        #               f"Average steps last 50 episodes: {avg_steps:.2f}")
 
-        return self.total_steps
+        # return self.total_steps
     
     def test(self, episodes: int = 100, render: bool = False) -> dict:
         """
