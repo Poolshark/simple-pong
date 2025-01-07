@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Tuple, Dict
-from pong.algorithms import Algorithms
+from pong.algorithms_b import Algorithms
 
 class SimplePong:
     

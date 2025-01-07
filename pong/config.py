@@ -17,7 +17,7 @@ class Config:
     # agent does not loose any games anymore.
     MAX_STEPS = 100_000
 
-    def __init__(self) -> None:
+    def __init__(self, algo: str | None = None) -> None:
         """
         Initialises the environment and all neccessary parameters for Simple Pong.
 
@@ -28,24 +28,35 @@ class Config:
         self._test_input_params()
 
         # Initialise general parameters
-        self.algo = params["ALGORITHM"]
+        if (algo is not None):
+            self.algo = algo
+        else:
+            self.algo = params["ALGORITHM"]
         self.total_steps: List[int] = []
         self.training_episodes = params["EPISODES"]
         self.testing_episiodes = params["TESTING_EPISODES"]
         self.env = SimplifiedPongEnv(grid_size=params["GRID_SIZE"], ball_speed=params["BALL_SPEED"])
+        self.state_space_size = (params["GRID_SIZE"],) * 4  
 
         # Q-values (SARSA, Q-learning, Monte Carlo)
-        self.Q = np.zeros((params["GRID_SIZE"],) * 4 + (self.ACTION_SPACE_SIZE,))
+        if (self.algo == "Q" or self.algo == "S" or self.algo == "M" ):
+            self.Q = np.zeros(self.state_space_size + (self.ACTION_SPACE_SIZE,))
 
         # Learning parameters
         if (self.algo == "Q"):
-            self.alpha = params['Q_ALPHA']
-            self.gamma = params['Q_GAMMA']
-            self.epsilon = params["Q_EPSILON"]
+            self.alpha = float(params['Q_ALPHA'])
+            self.gamma = float(params['Q_GAMMA'])
+            self.epsilon = float(params["Q_EPSILON"])
         elif (self.algo == "S"):
-            self.alpha = params['S_ALPHA']
-            self.gamma = params['S_GAMMA']
-            self.epsilon = params["S_EPSILON"]
+            self.alpha = float(params['S_ALPHA'])
+            self.gamma = float(params['S_GAMMA'])
+            self.epsilon = float(params["S_EPSILON"])
+        elif (self.algo == "M"):
+            self.epsilon = float(params["EPS"])
+            self.gamma = float(params['M_GAMMA'])
+        elif (self.algo == "R"):
+            self.alpha = float(params["R_ALPHA"])
+            self.gamma = float(params["R_GAMMA"])
 
 
     def _test_input_params(self):

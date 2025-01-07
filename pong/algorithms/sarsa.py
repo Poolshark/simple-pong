@@ -2,34 +2,25 @@ import numpy as np
 from typing import List
 from pong.config import Config
 
-class Q_Learning(Config):
-    
+class Sarsa(Config):
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(algo="S")
 
     def choose_action(self, state: tuple, training: bool = True) -> int:
         """
-        Epsilon-greedy action selection (epsilon-greedy policy). It balances
-        two important aspects of RL:
+        Epsilon-greedy action selection (epsilon-greedy policy).
+        Same implementation as with Q-learning. However, the individual
+        learning parameter epsilon, might have a different impact.
+      
         
-        And thus, `np.random.choice(self.action_space_size)` selects the action
-        with the highest Q-value (exploitation). And 
-        `np.random.choice(self.action_space_size)` picks a random action 
-        (exploration).
+        Parameters
+        ----------
+        state   : The current state-action pair
+        training: Flag whether we are training the agent or not
 
-        The training flag serves 2 purposes:
-
-        1. During training (`training=True`), it explores with a probability of
-            eplision (`np.random.rand() < self.epsilon`), meaning it takes a
-            random action. The agent exploits with a probability of 1-epsilon.
-
-        2. During testing (`training=False`), the agent ALWAYS exploits. This
-            helps to evaluate the actual learned policy without randomness of
-            exploration.
-        
-        ##### Parameters
-        : state    -- The current state-action pair
-        : training -- Flag 
+        Returns
+        -------
+        Int: The action which should be taken (up, down, stay)
         """
 
         if training and np.random.rand() < self.epsilon:
@@ -38,11 +29,7 @@ class Q_Learning(Config):
 
     def train(self, render: bool = False) -> List[int]:
         """
-        Q-learning agent trainer.
-
-        Parameters
-        ----------
-        render[bool]: Whether a training output should be rendered or not
+        SARSA implementation.
 
         Returns
         -------
@@ -54,19 +41,24 @@ class Q_Learning(Config):
             done = False
             current_episode_steps = 0
 
+            # Choose initial action using current policy
+            action = self.choose_action(state)
+
             while not done:
-                action = self.choose_action(state)
                 next_state, reward, done = self.env.step(action)
                 next_state = tuple(next_state)
 
-                # Update Q-value
-                best_next_action = np.argmax(self.Q[next_state])
+                # Choose next action using current policy
+                next_action = self.choose_action(next_state)
+
+                # Update Q-value using SARSA update rule
                 self.Q[state][action] += self.alpha * (
-                    reward + self.gamma * self.Q[next_state][best_next_action]
+                    reward + self.gamma * self.Q[next_state][next_action]
                     - self.Q[state][action]
                 )
 
                 state = next_state
+                action = next_action
                 current_episode_steps += 1
 
             self.total_steps.append(current_episode_steps)
@@ -78,9 +70,11 @@ class Q_Learning(Config):
 
         return self.total_steps
     
+
     def test(self, render: bool = False) -> dict:
         """
         Test the trained agent and return performance metrics.
+        Same implementation as with Q-learning.
         
         Parameters
         ----------
