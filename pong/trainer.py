@@ -12,19 +12,22 @@ class Trainer:
     def __init__(self) -> None:
         self.algo = "Q"
         self.total_steps: List[int] = []
+        self.algoInstance = None
     
     def train(self, algo: str = "Q", render: bool = False):
         self.algo = algo
         self.total_steps = []
 
         if (algo == "Q"):
-            self.total_steps = QLearning().train(render=render)
+            self.algoInstance = QLearning()
         elif (algo == "S"):
-            self.total_steps = Sarsa().train(render=render)
+            self.algoInstance = Sarsa()
         elif (algo == "M"):
-            self.total_steps = MonteCarlo().train(render=render)
+            self.algoInstance = MonteCarlo()
         elif (algo == "R"):
-            self.total_steps = SimpleReinforce().train(render=render)
+            self.algoInstance = SimpleReinforce()
+
+        self.total_steps = self.algoInstance.train(render=render)
 
         return self.total_steps
 

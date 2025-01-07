@@ -71,7 +71,7 @@ class MonteCarlo(Config):
 
                 # Check for convergence
                 if np.abs(self.Q[state][action] - previous_Q) < self.epsilon:  # Small threshold
-                    print(f"Converged for state {state}, action {action} in episode {episode}. Breaking out.")
+                    print(f"MONTE CARLO > Converged for state {state}, action {action} in episode {episode}. Breaking out.")
                     playing = False
                     break
                 previous_Q = self.Q[state][action]  # Update previous Q-value
@@ -88,7 +88,7 @@ class MonteCarlo(Config):
 
         return self.total_steps
     
-    def test(self) -> Dict[str, float]:
+    def test(self, render: bool = False) -> Dict[str, float]:
         """
         Test the trained agent.
 
@@ -119,4 +119,5 @@ class MonteCarlo(Config):
             'avg_steps': np.mean(test_steps),
             'max_steps': np.max(test_steps),
             'min_steps': np.min(test_steps),
+            'std_steps': np.std(test_steps)
         }

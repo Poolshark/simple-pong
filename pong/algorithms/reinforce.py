@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Dict
 from pong.config import Config
 
 class SimpleReinforce(Config):
@@ -52,7 +53,7 @@ class SimpleReinforce(Config):
 
         return self.total_steps
     
-    def test(self, render: bool = False) -> dict:
+    def test(self, render: bool = False) -> Dict[str, float]:
         """
         Test the trained agent using the REINFORCE algorithm.
 
