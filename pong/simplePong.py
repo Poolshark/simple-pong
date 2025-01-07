@@ -136,7 +136,7 @@ class SimplePong:
 
         test_steps = []
 
-        for episode in range(episodes):
+        for _ in range(episodes):
             state = tuple(self.env.reset())
             done = False
             steps = 0
