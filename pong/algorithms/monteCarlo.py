@@ -55,7 +55,7 @@ class MonteCarlo(Config):
                 episode_rewards.append(reward)
 
                 if (len(episode_steps) > self.MAX_STEPS):
-                    print("Agent does not lose games any more. Break out.")
+                    print("MONTE CARLO > Agent does not lose games any more. Breaking out.")
                     done = True
 
                 state = next_state

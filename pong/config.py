@@ -15,7 +15,7 @@ class Config:
 
     # Maximum number of steps we consider so that the
     # agent does not loose any games anymore.
-    MAX_STEPS = 100_000
+    MAX_STEPS = 10_000
 
     def __init__(self, algo: str | None = None) -> None:
         """

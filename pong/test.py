@@ -13,11 +13,11 @@ from pong.play import Play
 with open('input.yml', 'r') as file:
     params = yaml.safe_load(file)
 
-
+# Get params from input file
 num_sims = int(params["NUM_SIMS"])
-render_training = params["TRAINING_OUTPUT"]
-render_testing = params["TESTING_OUTPUT"]
 training_plot = params["TRAINING_PLOT"]
+render_testing = params["TESTING_OUTPUT"]
+render_training = params["TRAINING_OUTPUT"]
 
 # Multi simulation
 if (num_sims > 0):

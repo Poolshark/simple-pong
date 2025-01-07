@@ -1,10 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Dict
-from pong.algorithms.qlearning import QLearning
-from pong.algorithms.sarsa import Sarsa
-from pong.algorithms.monteCarlo import MonteCarlo
-from pong.algorithms.reinforce import SimpleReinforce
 
 class Play:
     def __init__(self) -> None:
