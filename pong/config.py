@@ -52,8 +52,9 @@ class Config:
             self.gamma = float(params['S_GAMMA'])
             self.epsilon = float(params["S_EPSILON"])
         elif (self.algo == "M"):
-            self.epsilon = float(params["EPS"])
+            self.eps = float(params["EPS"])
             self.gamma = float(params['M_GAMMA'])
+            self.epsilon = float(params["S_EPSILON"])
         elif (self.algo == "R"):
             self.alpha = float(params["R_ALPHA"])
             self.gamma = float(params["R_GAMMA"])

@@ -9,19 +9,22 @@ class MonteCarlo(Config):
         self.returns = {state: {action: [] for action in range(self.ACTION_SPACE_SIZE)} for state in np.ndindex(self.state_space_size)}
 
 
-    def choose_action(self, state: tuple) -> int:
+    def choose_action(self, state: tuple, training: bool = False) -> int:
         """
         Choose an action based on the epsilon-greedy policy.
 
         Parameters
         ----------
-        state[Tuple]: The current state.
+        state[Tuple]: The current state
+        training[bool]: Whether to use exploration (True) or pure exploitation (False)
 
         Returns
         -------
-        Int: The chosen action.
+        Int: The chosen action
         """
-        return np.argmax(self.Q[state])  # Always exploit in this simple implementation
+        if training and np.random.rand() < self.epsilon:
+            return np.random.choice(self.ACTION_SPACE_SIZE)
+        return np.argmax(self.Q[state])
 
     def train(self, render: bool = False) -> List[int]:
         """
@@ -46,7 +49,7 @@ class MonteCarlo(Config):
             episode_rewards = []
 
             while not done:
-                action = self.choose_action(state)
+                action = self.choose_action(state, training=True)
                 next_state, reward, done = self.env.step(action)
                 next_state = tuple(next_state)
 
@@ -70,7 +73,7 @@ class MonteCarlo(Config):
                 self.Q[state][action] = np.mean(self.returns[state][action])  # Update Q-value
 
                 # Check for convergence
-                if np.abs(self.Q[state][action] - previous_Q) < self.epsilon:  # Small threshold
+                if np.abs(self.Q[state][action] - previous_Q) < self.eps:  # Small threshold
                     print(f"MONTE CARLO > Converged for state {state}, action {action} in episode {episode}. Breaking out.")
                     playing = False
                     break
@@ -105,7 +108,7 @@ class MonteCarlo(Config):
             steps = 0
             
             while not done:
-                action = np.argmax(self.Q[state])  # Always exploit
+                action = self.choose_action(state, training=False)
                 next_state, reward, done = self.env.step(action)
                 state = tuple(next_state)
                 steps += 1

@@ -110,33 +110,33 @@ class Trainer:
         plt.show()
 
 
-    def plot_combined_learning_curve(self, steps: Dict[str, List[int]], window_size: int = 50):
-        
+    def plot_combined_learning_curve(self, steps: Dict[str, List[float]], window_size: int = 50):
         plt.figure(figsize=(10, 5))
+        plt.yscale('log')  # Set y-axis to logarithmic scale
         plt.xlabel('Episode')
-        plt.ylabel('Average Steps per Episode')
+        plt.ylabel('Average Steps per Episode (log scale)')
         plt.title('COMBINED - Moving Average of Episode Length')
 
-        for x in steps:  
-            total_steps = steps[x]
+        for algo, total_steps in steps.items():
             # Calculate moving average
             moving_avg = [
                 np.mean(total_steps[max(0, i-window_size):i])
                 for i in range(1, len(total_steps)+1)
             ]
 
-            if (x == "Q"):
+            if (algo == "Q"):
                 label = "Q-LEARNING"
-            elif (x == "S"):
+            elif (algo == "S"):
                 label = "SARSA"
-            elif (x == "M"):
+            elif (algo == "M"):
                 label = "MONTE CARLO"
-            elif (x == "R"):
-                label = "REINFORFCE"
+            elif (algo == "R"):
+                label = "REINFORCE"
 
             plt.plot(moving_avg, label=label)
 
         plt.legend()
+        plt.grid(True)  # Add grid for better readability with log scale
         plt.show()
 
              
