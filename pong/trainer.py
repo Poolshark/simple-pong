@@ -5,6 +5,7 @@ from pong.algorithms.qlearning import QLearning
 from pong.algorithms.sarsa import Sarsa
 from pong.algorithms.monteCarlo import MonteCarlo
 from pong.algorithms.reinforce import SimpleReinforce
+import os
 
 
 
@@ -110,7 +111,7 @@ class Trainer:
         plt.show()
 
 
-    def plot_combined_learning_curve(self, steps: Dict[str, List[int]]):
+    def plot_combined_learning_curve(self, steps: Dict[str, List[int]], save_plots:bool = False):
         """Plot combined learning curves for all algorithms."""
         window_size = 50  # Moving average window size
         
@@ -151,6 +152,18 @@ class Trainer:
 
         plt.legend(loc='upper right')
         plt.tight_layout()
+
+        # Create output directory if it doesn't exist
+        output_dir = 'output'
+        if save_plots and not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        # Save plot if SAVE_PLOTS is True
+        if save_plots:
+            plt.savefig(os.path.join(output_dir, 'learning_curves.png'), 
+                       bbox_inches='tight', 
+                       dpi=300)
+        
         plt.show()
 
              

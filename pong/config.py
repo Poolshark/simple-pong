@@ -59,7 +59,6 @@ class Config:
             self.alpha = float(params["R_ALPHA"])
             self.gamma = float(params["R_GAMMA"])
 
-
     def _test_input_params(self):
         """
         Tests if all input params are set in `input.yml`. Furthermore, do

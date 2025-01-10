@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Dict
+import os
 
 class Play:
     def __init__(self) -> None:
@@ -57,7 +58,7 @@ class Play:
                 for metric, value in results.items():
                     print(f"{_convert_metric_title(metric)}: {value:.2f}")
 
-    def plot_results(self, results: Dict[str, Dict[str, float]] | Dict[str, float]):
+    def plot_results(self, results: Dict[str, Dict[str, float]] | Dict[str, float], save_plots: bool = False):
         """
         Plot bar charts comparing metrics across algorithms.
         
@@ -190,6 +191,17 @@ class Play:
                        label,
                        ha='center', va='bottom')
 
+        # Create output directory if it doesn't exist
+        output_dir = 'output'
+        if save_plots and not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        # Save plot if SAVE_PLOTS is True
+        if save_plots:
+            plt.savefig(os.path.join(output_dir, 'performance_comparison.png'), 
+                       bbox_inches='tight', 
+                       dpi=300)
+        
         plt.show()
 
 

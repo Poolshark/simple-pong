@@ -123,11 +123,11 @@ if (num_sims > 0):
     if render_testing_results:
         print(f"\nAveraged results over {num_sims} simulations:")
         player.print_results(avg_test_results)
-        player.plot_results(avg_test_results)
+        player.plot_results(results=avg_test_results,save_plots=params["SAVE_PLOTS"])
     
     # Plot averaged learning curves
     if training_plot:
-        trainer.plot_combined_learning_curve(avg_training_results)
+        trainer.plot_combined_learning_curve(steps=avg_training_results, save_plots=params["SAVE_PLOTS"])
 
 # Single simulation
 else:
