@@ -23,33 +23,41 @@ class SimpleReinforce(Config):
 
             # Generate an episode
             while not done:
+                # Get action probabilities and sample action
+                probs = self.policy[state]
                 action = self.choose_action_policy(state)
                 next_state, reward, done = self.env.step(action)
                 next_state = tuple(next_state)
-                trajectory.append((state, action, reward))
-                episode_steps = episode_steps + 1
+                
+                # Store state, action, reward, and log probability
+                # Add small constant for numerical stability
+                log_prob = np.log(probs[action] + 1e-10)  
+                trajectory.append((state, action, reward, log_prob))
+                episode_steps += 1
                 state = next_state
 
-            # Compute returns and update policy
+            # Compute returns and update policy using gradient ascent
             G = 0
-            for state, action, reward in reversed(trajectory):
+            for state, action, reward, log_prob in reversed(trajectory):
                 G = reward + self.gamma * G  # Calculate return
-                # Update policy using the return
-                self.policy[state][action] += self.alpha * G
-                self.policy[state] = np.clip(self.policy[state], 0, None)  # Ensure non-negativity
-                total = np.sum(self.policy[state])
-                if total > 0:
-                    self.policy[state] /= total
-                else:
-                    print(f"Warning: Total probability for state {state} is non-positive.")
-                # self.policy[state] /= np.sum(self.policy[state])  # Normalize
+                
+                # Policy gradient update
+                gradient = np.zeros_like(self.policy[state])
+                gradient[action] = G * log_prob  # Policy gradient
+                
+                # Update policy using gradient ascent
+                self.policy[state] += self.alpha * gradient
+                
+                # Normalize to ensure valid probability distribution
+                self.policy[state] = np.clip(self.policy[state], 0, None)
+                self.policy[state] /= np.sum(self.policy[state])
 
             self.total_steps.append(episode_steps)
 
-            # Optional: Print episode results
-            if (((episode + 1) % 50 == 0) and render ):
+            if (((episode + 1) % 50 == 0) and render):
                 avg_steps = np.mean(self.total_steps[-50:])
-                print(f"Episode {episode + 1}/{self.training_episodes} completed. Average steps last 50 episodes: {avg_steps:.2f}")
+                print(f"Episode {episode + 1}/{self.training_episodes} completed. "
+                      f"Average steps last 50 episodes: {avg_steps:.2f}")
 
         return self.total_steps
     
@@ -72,18 +80,20 @@ class SimpleReinforce(Config):
         test_steps = []
 
         for _ in range(self.testing_episiodes):
-            state = self.env.reset()
+            state = tuple(self.env.reset())
             done = False
             steps = 0
             
             while not done:
-                state_tuple = tuple(state)  # Convert state to a tuple if necessary
-                probabilities = self.policy[state_tuple]  # Get action probabilities from the policy
-                action = np.random.choice(len(probabilities), p=probabilities)  # Choose action based on probabilities
+                # During testing, choose the action with highest probability
+                action = np.argmax(self.policy[state])
                 
                 next_state, reward, done = self.env.step(action)
-                state = next_state
+                state = tuple(next_state)
                 steps += 1
+
+                if steps > self.MAX_STEPS:
+                    done = True
 
                 if render:
                     self.env.render()  # Render the environment if requested

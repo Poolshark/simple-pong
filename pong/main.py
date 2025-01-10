@@ -123,6 +123,7 @@ if (num_sims > 0):
     if render_testing_results:
         print(f"\nAveraged results over {num_sims} simulations:")
         player.print_results(avg_test_results)
+        player.plot_results(avg_test_results)
     
     # Plot averaged learning curves
     if training_plot:
@@ -143,3 +144,4 @@ else:
 
     if (training_plot):
         trainer.plot_learning_curve()
+

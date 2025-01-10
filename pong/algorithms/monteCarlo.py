@@ -41,8 +41,7 @@ class MonteCarlo(Config):
 
         playing = True
         episode = 0
-        while (playing or episode > self.training_episodes):
-        # for episode in range(self.training_episodes):
+        while playing and episode < self.training_episodes:
             state = tuple(self.env.reset())
             done = False
             episode_steps = []
@@ -87,7 +86,7 @@ class MonteCarlo(Config):
                 print(f"Current Q-values for state {state}: {self.Q[state]}")  # Debugging output
 
             
-            episode = episode + 1
+            episode += 1
 
         return self.total_steps
     

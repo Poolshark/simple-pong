@@ -110,12 +110,32 @@ class Trainer:
         plt.show()
 
 
-    def plot_combined_learning_curve(self, steps: Dict[str, List[float]], window_size: int = 50):
-        plt.figure(figsize=(10, 5))
-        plt.yscale('log')  # Set y-axis to logarithmic scale
+    def plot_combined_learning_curve(self, steps: Dict[str, List[int]]):
+        """Plot combined learning curves for all algorithms."""
+        window_size = 50  # Moving average window size
+        
+        # Use same color scheme as in play.py
+        algo_colors = {
+            'Q': '#2C699A',  # Deep blue
+            'S': '#048BA8',  # Teal
+            'M': '#0DB39E',  # Turquoise
+            'R': '#16DB93'   # Mint green
+        }
+        
+        # Map algorithm codes to full names
+        algo_names = {
+            'Q': 'Q-Learning',
+            'S': 'SARSA',
+            'M': 'Monte Carlo',
+            'R': 'REINFORCE'
+        }
+
+        plt.figure(figsize=(10, 6))
+        plt.yscale('log')
         plt.xlabel('Episode')
-        plt.ylabel('Average Steps per Episode (log scale)')
-        plt.title('COMBINED - Moving Average of Episode Length')
+        plt.ylabel('Steps per Episode')
+        plt.title('Learning Curves - Moving Average of Episode Length')
+        plt.grid(True, alpha=0.3)
 
         for algo, total_steps in steps.items():
             # Calculate moving average
@@ -124,19 +144,13 @@ class Trainer:
                 for i in range(1, len(total_steps)+1)
             ]
 
-            if (algo == "Q"):
-                label = "Q-LEARNING"
-            elif (algo == "S"):
-                label = "SARSA"
-            elif (algo == "M"):
-                label = "MONTE CARLO"
-            elif (algo == "R"):
-                label = "REINFORCE"
+            plt.plot(moving_avg, 
+                    label=algo_names[algo],
+                    color=algo_colors[algo],
+                    linewidth=2)
 
-            plt.plot(moving_avg, label=label)
-
-        plt.legend()
-        plt.grid(True)  # Add grid for better readability with log scale
+        plt.legend(loc='upper right')
+        plt.tight_layout()
         plt.show()
 
              
