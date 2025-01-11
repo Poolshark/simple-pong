@@ -3,6 +3,7 @@ import numpy as np
 from pong.play import Play
 from typing import Dict, List
 from pong.trainer import Trainer
+from pong.plot import create_combined_plot, create_latex_table
 
 def average_test_results(test_results: List[Dict[str, Dict[str, float]]]) -> Dict[str, Dict[str, float]]:
     """Average test results across all simulations for each algorithm."""
@@ -123,11 +124,31 @@ if (num_sims > 0):
     if render_testing_results:
         print(f"\nAveraged results over {num_sims} simulations:")
         player.print_results(avg_test_results)
-        player.plot_results(results=avg_test_results,save_plots=params["SAVE_PLOTS"])
+        # create_combined_plot(
+        #     training_results=avg_training_results,
+        #     test_results=avg_test_results,
+        #     save_plots=params["SAVE_PLOTS"]
+        # )
+        create_latex_table(avg_test_results)
     
     # Plot averaged learning curves
     if training_plot:
-        trainer.plot_combined_learning_curve(steps=avg_training_results, save_plots=params["SAVE_PLOTS"])
+        trainer.plot_combined_learning_curve(
+            steps=avg_training_results, 
+            save_plots=params["SAVE_PLOTS"],
+            show_title=params["SHOW_TITLE"],
+            show_legend=params["SHOW_LEGEND"],
+            show_xlabel=params["SHOW_XLABEL"],
+            show_ylabel=params["SHOW_YLABEL"],
+            window_size=params["WINDOW_SIZE"]
+        )
+
+    # if training_plot or render_testing_results:
+    #     create_combined_plot(
+    #         training_results=avg_training_results,
+    #         test_results=avg_test_results,
+    #         save_plots=params["SAVE_PLOTS"]
+    #     )
 
 # Single simulation
 else:

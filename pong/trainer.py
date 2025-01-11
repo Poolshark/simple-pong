@@ -111,9 +111,8 @@ class Trainer:
         plt.show()
 
 
-    def plot_combined_learning_curve(self, steps: Dict[str, List[int]], save_plots:bool = False):
+    def plot_combined_learning_curve(self, steps: Dict[str, List[int]], save_plots:bool = False, window_size:int = 50, show_title:bool = False, show_legend:bool = False, show_xlabel:bool = False, show_ylabel:bool = False):
         """Plot combined learning curves for all algorithms."""
-        window_size = 50  # Moving average window size
         
         # Use same color scheme as in play.py
         algo_colors = {
@@ -131,12 +130,35 @@ class Trainer:
             'R': 'REINFORCE'
         }
 
-        plt.figure(figsize=(10, 6))
-        plt.yscale('log')
-        plt.xlabel('Episode')
-        plt.ylabel('Steps per Episode')
-        plt.title('Learning Curves - Moving Average of Episode Length')
+        fig = plt.figure(figsize=(10, 6))
+        ax = plt.gca()
         plt.grid(True, alpha=0.3)
+        plt.yscale('log')
+
+        if show_xlabel:
+            plt.xlabel('Episode', fontsize=16)
+
+        if show_ylabel:
+            plt.ylabel('Steps per Episode', fontsize=16)
+        
+        if show_title:
+            plt.title('Learning Curves - Moving Average of Episode Length', fontsize=16)
+    
+
+        # Set consistent font sizes for both axes
+        ax.tick_params(axis='both', which='major', labelsize=14)
+        ax.tick_params(axis='both', which='minor', labelsize=14)
+        
+        # Add more space for y-axis labels
+        ax.yaxis.set_tick_params(pad=10)
+        
+        # Format y-axis tick labels to be more readable
+        ax.yaxis.set_major_formatter(plt.ScalarFormatter())
+        ax.yaxis.get_major_formatter().set_scientific(False)
+        ax.yaxis.set_tick_params(labelsize=14)  # Explicitly set y-axis font size
+        
+        # Adjust y-axis to avoid overlapping
+        plt.subplots_adjust(left=0.15)  # Make more space for y-axis labels
 
         for algo, total_steps in steps.items():
             # Calculate moving average
@@ -150,7 +172,9 @@ class Trainer:
                     color=algo_colors[algo],
                     linewidth=2)
 
-        plt.legend(loc='upper right')
+        if show_legend:
+            plt.legend(loc='upper left', fontsize=12)
+        
         plt.tight_layout()
 
         # Create output directory if it doesn't exist
