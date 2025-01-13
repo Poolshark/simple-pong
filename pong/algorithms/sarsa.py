@@ -36,10 +36,13 @@ class Sarsa(Config):
         List[int]: Steps taken in each episode
         """
 
+        total_steps = []
+        wins = 0
+
         for episode in range(self.training_episodes):
             state = tuple(self.env.reset())
             done = False
-            current_episode_steps = 0
+            steps = 0
 
             # Choose initial action using current policy
             action = self.choose_action(state)
@@ -59,16 +62,23 @@ class Sarsa(Config):
 
                 state = next_state
                 action = next_action
-                current_episode_steps += 1
+                steps += 1
 
-            self.total_steps.append(current_episode_steps)
+            total_steps.append(steps)
+
+            # Count wins (reward == 1)
+            if reward == 1:
+                wins += 1
 
             if (((episode + 1) % 50 == 0) and render ):
-                avg_steps = np.mean(self.total_steps[-50:])
+                avg_steps = np.mean(total_steps[-50:])
                 print(f"Episode {episode + 1}/{self.training_episodes} completed. "
                       f"Average steps last 50 episodes: {avg_steps:.2f}")
 
-        return self.total_steps
+        return {
+            'total_steps': total_steps,
+            'win_rate': wins / self.training_episodes
+        }
     
 
     def test(self, render: bool = False) -> dict:
@@ -86,6 +96,7 @@ class Sarsa(Config):
         """
 
         test_steps = []
+        wins = 0
 
         for _ in range(self.testing_episiodes):
             state = tuple(self.env.reset())
@@ -106,9 +117,14 @@ class Sarsa(Config):
             
             test_steps.append(steps)
 
+            # Count wins (reward == 1)  
+            if reward == 1:
+                wins += 1
+
         return {
             'avg_steps': np.mean(test_steps),
             'max_steps': np.max(test_steps),
             'min_steps': np.min(test_steps),
-            'std_steps': np.std(test_steps)
+            'std_steps': np.std(test_steps),
+            'win_rate': wins / self.testing_episiodes
         }

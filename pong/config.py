@@ -1,6 +1,5 @@
 import yaml
 import numpy as np
-from typing import List
 from pong.environment import SimplifiedPongEnv
 
 # Load parameters from yaml file
@@ -32,7 +31,7 @@ class Config:
             self.algo = algo
         else:
             self.algo = params["ALGORITHM"]
-        self.total_steps: List[int] = []
+
         self.training_episodes = params["EPISODES"]
         self.testing_episiodes = params["TESTING_EPISODES"]
         self.env = SimplifiedPongEnv(grid_size=params["GRID_SIZE"], ball_speed=params["BALL_SPEED"])

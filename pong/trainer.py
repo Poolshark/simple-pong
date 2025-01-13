@@ -12,12 +12,10 @@ import os
 class Trainer:
     def __init__(self) -> None:
         self.algo = "Q"
-        self.total_steps: List[int] = []
         self.algoInstance = None
     
     def train(self, algo: str = "Q", render: bool = False):
         self.algo = algo
-        self.total_steps = []
 
         if (algo == "Q"):
             self.algoInstance = QLearning()
@@ -28,9 +26,7 @@ class Trainer:
         elif (algo == "R"):
             self.algoInstance = SimpleReinforce()
 
-        self.total_steps = self.algoInstance.train(render=render)
-
-        return self.total_steps
+        return self.algoInstance.train(render=render)
 
     def plot_learning_curve(self, window_size: int = 50):
         """
@@ -133,13 +129,13 @@ class Trainer:
         fig = plt.figure(figsize=(10, 6))
         ax = plt.gca()
         plt.grid(True, alpha=0.3)
-        plt.yscale('log')
+        # plt.yscale('log')
 
         if show_xlabel:
-            plt.xlabel('Episode', fontsize=16)
+            plt.xlabel('$E_{training}$', fontsize=16)
 
         if show_ylabel:
-            plt.ylabel('Steps per Episode', fontsize=16)
+            plt.ylabel('log(s)', fontsize=16)
         
         if show_title:
             plt.title('Learning Curves - Moving Average of Episode Length', fontsize=16)
@@ -153,9 +149,9 @@ class Trainer:
         ax.yaxis.set_tick_params(pad=10)
         
         # Format y-axis tick labels to be more readable
-        ax.yaxis.set_major_formatter(plt.ScalarFormatter())
-        ax.yaxis.get_major_formatter().set_scientific(False)
-        ax.yaxis.set_tick_params(labelsize=14)  # Explicitly set y-axis font size
+        # ax.yaxis.set_major_formatter(plt.ScalarFormatter())
+        # ax.yaxis.get_major_formatter().set_scientific(False)
+        # ax.yaxis.set_tick_params(labelsize=14)  # Explicitly set y-axis font size
         
         # Adjust y-axis to avoid overlapping
         plt.subplots_adjust(left=0.15)  # Make more space for y-axis labels
@@ -163,7 +159,7 @@ class Trainer:
         for algo, total_steps in steps.items():
             # Calculate moving average
             moving_avg = [
-                np.mean(total_steps[max(0, i-window_size):i])
+                np.log10(np.mean(total_steps[max(0, i-window_size):i]))
                 for i in range(1, len(total_steps)+1)
             ]
 
@@ -188,6 +184,51 @@ class Trainer:
                        bbox_inches='tight', 
                        dpi=300)
         
+        plt.show()
+
+
+
+    def create_adjusted_learning_curve(training_results: Dict[str, List[int]], 
+                                    win_rates: Dict[str, List[float]], 
+                                    save_plots: bool = False):
+        """
+        Create an adjusted learning curve plot with average steps and win rates.
+        
+        Parameters
+        ----------
+        training_results: Dictionary containing training steps for each algorithm
+        win_rates: Dictionary containing win rates for each algorithm
+        save_plots: Whether to save the plots to files
+        """
+        # Create figure
+        fig, ax1 = plt.subplots(figsize=(15, 7))
+
+        # Plot average steps per episode
+        for algo, total_steps in training_results.items():
+            moving_avg_steps = np.convolve(total_steps, np.ones(50)/50, mode='valid')
+            ax1.plot(moving_avg_steps, label=f'{algo} - Avg Steps', linewidth=2)
+
+        ax1.set_xlabel('Episode')
+        ax1.set_ylabel('Average Steps per Episode', color='tab:blue')
+        ax1.tick_params(axis='y', labelcolor='tab:blue')
+        ax1.grid(True, alpha=0.3)
+
+        # Create a second y-axis for win rates
+        ax2 = ax1.twinx()
+        for algo, win_rate in win_rates.items():
+            moving_avg_win_rate = np.convolve(win_rate, np.ones(50)/50, mode='valid')
+            ax2.plot(moving_avg_win_rate, linestyle='--', label=f'{algo} - Win Rate', linewidth=2)
+
+        ax2.set_ylabel('Win Rate', color='tab:orange')
+        ax2.tick_params(axis='y', labelcolor='tab:orange')
+
+        # Add legends and title
+        fig.legend(loc='upper left', bbox_to_anchor=(0.1, 0.9), bbox_transform=ax1.transAxes)
+        plt.title('Adjusted Learning Curve: Average Steps and Win Rate')
+        
+        if save_plots:
+            plt.savefig('adjusted_learning_curve.png', bbox_inches='tight', dpi=300)
+
         plt.show()
 
              

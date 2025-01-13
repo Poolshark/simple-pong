@@ -71,7 +71,7 @@ render_testing_results = params["TESTING_RESULTS"]
 
 # Multi simulation
 if (num_sims > 0):
-    training_results: List[Dict[str, List[int]]] = []
+    training_results: List[Dict[str, Dict[str, float]]] = []
     test_results: List[Dict[str, Dict[str, float]]] = []
 
     # Simulation loop

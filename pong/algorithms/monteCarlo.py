@@ -41,6 +41,9 @@ class MonteCarlo(Config):
 
         playing = True
         episode = 0
+        total_steps = []
+        wins = 0
+
         while playing and episode < self.training_episodes:
             state = tuple(self.env.reset())
             done = False
@@ -78,17 +81,23 @@ class MonteCarlo(Config):
                     break
                 previous_Q = self.Q[state][action]  # Update previous Q-value
 
-            self.total_steps.append(len(episode_steps))
+            total_steps.append(len(episode_steps))
+
+            # Count wins (reward == 1)
+            if reward == 1:
+                wins += 1
 
             if (((episode + 1) % 50 == 0) and render ):
-                avg_steps = np.mean(self.total_steps[-50:])
+                avg_steps = np.mean(total_steps[-50:])
                 print(f"Episode {episode + 1}/{self.training_episodes} completed. Average steps last 50 episodes: {avg_steps:.2f}")
                 print(f"Current Q-values for state {state}: {self.Q[state]}")  # Debugging output
-
             
             episode += 1
 
-        return self.total_steps
+        return {
+            'total_steps': total_steps,
+            'win_rate': wins / self.training_episodes
+        }
     
     def test(self, render: bool = False) -> Dict[str, float]:
         """
@@ -100,7 +109,10 @@ class MonteCarlo(Config):
         Returns:
         A dictionary containing average, max, and min steps.
         """
+        
         test_steps = []
+        wins = 0
+
         for _ in range(self.testing_episiodes):
             state = tuple(self.env.reset())
             done = False
@@ -117,9 +129,14 @@ class MonteCarlo(Config):
             
             test_steps.append(steps)
 
+            # Count wins (reward == 1)
+            if reward == 1:
+                wins += 1
+
         return {
             'avg_steps': np.mean(test_steps),
             'max_steps': np.max(test_steps),
             'min_steps': np.min(test_steps),
-            'std_steps': np.std(test_steps)
+            'std_steps': np.std(test_steps),
+            'win_rate': wins / self.testing_episiodes
         }

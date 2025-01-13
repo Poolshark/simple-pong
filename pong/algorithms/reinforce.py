@@ -14,11 +14,18 @@ class SimpleReinforce(Config):
         return np.random.choice(self.ACTION_SPACE_SIZE, p=self.policy[state])
     
     def train(self, render: bool = False):
+        """
+        Train the agent using the REINFORCE algorithm.
+        """
+
+        total_steps = []
+        wins = 0
+
         for episode in range(self.training_episodes):
             state = self.env.reset()
             state = tuple(state)
             trajectory = []
-            episode_steps = 0
+            steps = 0
             done = False
 
             # Generate an episode
@@ -33,7 +40,7 @@ class SimpleReinforce(Config):
                 # Add small constant for numerical stability
                 log_prob = np.log(probs[action] + 1e-10)  
                 trajectory.append((state, action, reward, log_prob))
-                episode_steps += 1
+                steps += 1
                 state = next_state
 
             # Compute returns and update policy using gradient ascent
@@ -52,14 +59,21 @@ class SimpleReinforce(Config):
                 self.policy[state] = np.clip(self.policy[state], 0, None)
                 self.policy[state] /= np.sum(self.policy[state])
 
-            self.total_steps.append(episode_steps)
+            total_steps.append(steps)
+
+            # Count wins (reward == 1)
+            if reward == 1:
+                wins += 1
 
             if (((episode + 1) % 50 == 0) and render):
-                avg_steps = np.mean(self.total_steps[-50:])
+                avg_steps = np.mean(total_steps[-50:])
                 print(f"Episode {episode + 1}/{self.training_episodes} completed. "
                       f"Average steps last 50 episodes: {avg_steps:.2f}")
 
-        return self.total_steps
+        return {
+            'total_steps': total_steps,
+            'win_rate': wins / self.training_episodes
+        }
     
     def test(self, render: bool = False) -> Dict[str, float]:
         """
@@ -77,7 +91,9 @@ class SimpleReinforce(Config):
         dict
             A dictionary containing average, max, min steps, and standard deviation of steps.
         """
+
         test_steps = []
+        wins = 0
 
         for _ in range(self.testing_episiodes):
             state = tuple(self.env.reset())
@@ -100,9 +116,14 @@ class SimpleReinforce(Config):
 
             test_steps.append(steps)
 
+            # Count wins (reward == 1)  
+            if reward == 1:
+                wins += 1
+
         return {
             'avg_steps': np.mean(test_steps),
             'max_steps': np.max(test_steps),
             'min_steps': np.min(test_steps),
-            'std_steps': np.std(test_steps)
+            'std_steps': np.std(test_steps),
+            'win_rate': wins / self.testing_episiodes
         }
