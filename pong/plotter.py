@@ -1,18 +1,26 @@
+import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Dict, Literal
 import os
 
+# Load parameters from yaml file
+with open('input.yml', 'r') as file:
+    params = yaml.safe_load(file)
+
 class Plotter():
     def __init__(self) -> None:
-    # def __init__(self, training_results: List[Dict[str, Dict[str, List[float]]]], test_results: List[Dict[str, Dict[str, float]]]):
-        # super().__init__()
+        """
+        Initialises the plotter with the parameters from the yaml file.
+        """
 
-        # self.avg_training_results = self.average_training_results(training_results)
-        # self.avg_test_results = self.average_test_results(test_results)
-
-        self.algo = "Q"
-        self.save_plots = False
+        self.algo = params["ALGORITHM"]
+        self.save_plots = params["SAVE_PLOTS"]
+        self.show_legend = params["SHOW_LEGEND"]
+        self.show_title = params["SHOW_TITLE"]
+        self.show_xlabel = params["SHOW_XLABEL"]
+        self.show_ylabel = params["SHOW_YLABEL"]
+        self.window_size = params["WINDOW_SIZE"]
 
         self.algo_colors = {
             'Q': '#2C699A',  # Deep blue
@@ -85,8 +93,10 @@ class Plotter():
         ax1.set_xlabel('$E_{training}$', fontsize=14)
         ax1.set_ylabel('$log(s)$', fontsize=14)
         ax1.grid(True, alpha=0.3)
-        ax1.legend(fontsize=10, loc='lower right')
         ax1.tick_params(axis='both', labelsize=12)
+
+        if self.show_legend:
+            ax1.legend(fontsize=10, loc='lower right')
 
         # Plot win rates
         difficulties = ['easy', 'medium', 'hard']
@@ -109,6 +119,15 @@ class Plotter():
         ax2.tick_params(axis='both', labelsize=12)
         ax2.grid(True, axis='y', alpha=0.3)
         ax2.legend(fontsize=12)
+
+        # Save plot if requested
+        if self.save_plots:
+            output_dir = 'output/learning_curves'
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            plt.savefig(os.path.join(output_dir, 'learning_curves.png'), 
+                       bbox_inches='tight', 
+                       dpi=300)
 
         plt.tight_layout()
         plt.show()

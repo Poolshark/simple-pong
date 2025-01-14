@@ -9,7 +9,7 @@ class OpponentAI():
         if difficulty == "easy":
             self.mistake_frequency = 5
         elif difficulty == "medium":
-            self.mistake_frequency = 10
+            self.mistake_frequency = 20
         elif difficulty == "hard":
             self.mistake_frequency = 50
     
