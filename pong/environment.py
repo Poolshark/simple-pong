@@ -1,7 +1,7 @@
 import numpy as np
-
+from pong.oppentAi import OpponentAI
 class SimplifiedPongEnv:
-    def __init__(self, grid_size=10, ball_speed=1):
+    def __init__(self, grid_size=10, ball_speed=1, opponent_ai="easy"):
         """
         Instantiate class.
 
@@ -12,6 +12,9 @@ class SimplifiedPongEnv:
         : grid_size  -- The size of the Pong playing field (grid; default=10)
         : ball_speed -- Multiplier for ball velocity (default=1)
         """
+
+        # Opponent AI
+        self.opponent_ai = OpponentAI(opponent_ai, grid_size)
 
         # Size of the playing field (grid_size x grid_size)
         self.grid_size = grid_size
@@ -43,8 +46,12 @@ class SimplifiedPongEnv:
         self.paddle_agent = self.grid_size // 2  # Agent paddle (on the left)
         self.paddle_opponent = self.grid_size // 2  # Opponent paddle (on the right)
 
+        # Opponent AI (reset the mistake counter)
+        self.opponent_ai.reset()
+
         # Game state
         self.done = False
+
         return self._get_state()
 
     def _get_state(self):
@@ -72,10 +79,12 @@ class SimplifiedPongEnv:
             self.paddle_agent += 1
 
         # Opponent paddle follows the ball (simple AI)
-        if self.ball_y < self.paddle_opponent and self.paddle_opponent > 0:
-            self.paddle_opponent -= 1
-        elif self.ball_y > self.paddle_opponent and self.paddle_opponent < self.grid_size - 1:
-            self.paddle_opponent += 1
+        # if self.ball_y < self.paddle_opponent and self.paddle_opponent > 0:
+        #     self.paddle_opponent -= 1
+        # elif self.ball_y > self.paddle_opponent and self.paddle_opponent < self.grid_size - 1:
+        #     self.paddle_opponent += 1
+
+        self.paddle_opponent = self.opponent_ai.move(self.ball_y, self.paddle_opponent)
 
         # Update ball position with speed multiplier and clamp to grid boundaries
         self.ball_x = int(np.clip(

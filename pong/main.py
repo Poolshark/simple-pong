@@ -31,32 +31,43 @@ def average_test_results(test_results: List[Dict[str, Dict[str, float]]]) -> Dic
     
     return avg_results
 
-def average_training_results(training_results: List[Dict[str, List[int]]]) -> Dict[str, List[float]]:
-    """Average training steps across all simulations for each algorithm."""
-    avg_steps = {}
+def average_training_results(training_results: List[Dict[str, Dict[str, List[float]]]]) -> Dict[str, Dict[str, List[float]]]:
+    """Average training steps and win rates across all simulations for each algorithm."""
+    avg_results = {}
     
     # Get algorithms from first simulation
     algorithms = training_results[0].keys()
     
-    # Find max length for each algorithm
+    # Find max length for each algorithm's total_steps
     max_lengths = {}
     for algo in algorithms:
-        max_lengths[algo] = max(len(sim[algo]) for sim in training_results)
+        max_lengths[algo] = max(len(sim[algo]['total_steps']) for sim in training_results)
     
-    # Convert lists to numpy arrays with padding
+    # Initialize the structure
     for algo in algorithms:
-        # Pad shorter arrays with NaN
+        avg_results[algo] = {
+            'total_steps': [],
+            'win_rate': []
+        }
+    
+    # Process total_steps with padding
+    for algo in algorithms:
+        # Pad shorter arrays with last value
         padded_steps = []
         for sim in training_results:
-            steps = sim[algo]
-            padding = [steps[-1]] * (max_lengths[algo] - len(steps))  # Pad with last value
+            steps = sim[algo]['total_steps']
+            padding = [steps[-1]] * (max_lengths[algo] - len(steps))
             padded_steps.append(steps + padding)
         
         # Stack and calculate mean, ignoring NaN values
         all_steps = np.array(padded_steps)
-        avg_steps[algo] = np.mean(all_steps, axis=0).tolist()
+        avg_results[algo]['total_steps'] = np.mean(all_steps, axis=0).tolist()
+        
+        # Average win rates
+        win_rates = [sim[algo]['win_rate'] for sim in training_results]
+        avg_results[algo]['win_rate'] = np.mean(win_rates)
     
-    return avg_steps
+    return avg_results
 
 # Load parameters from yaml file
 with open('input.yml', 'r') as file:
@@ -82,39 +93,39 @@ if (num_sims > 0):
         trainer = Trainer()
 
         # Q-learning
-        qSteps = trainer.train(algo="Q")
-        qRes = player.play(trainer=trainer)
+        qTrain = trainer.train(algo="Q")
+        qTest  = player.play(trainer=trainer)
 
         # SARSA
-        sSteps = trainer.train(algo="S")
-        sRes = player.play(trainer=trainer)
+        aTrain = trainer.train(algo="S")
+        sTest  = player.play(trainer=trainer)
 
         # Monte Carlo
-        mSteps = trainer.train(algo="M")
-        mRes = player.play(trainer=trainer)
+        mTrain = trainer.train(algo="M")
+        mTest  = player.play(trainer=trainer)
 
         # REINFORCE
-        rSteps = trainer.train(algo="R")
-        rRes = player.play(trainer=trainer)
+        rTrain = trainer.train(algo="R")
+        rTest  = player.play(trainer=trainer)
 
         # Training Results for simulation
-        res = {
-            "Q": qRes,
-            "S": sRes,
-            "M": mRes,
-            "R": rRes
+        train = {
+            "Q": qTrain,
+            "S": aTrain,
+            "M": mTrain,
+            "R": rTrain
         }
 
-        steps = {
-            "Q": qSteps,
-            "S": sSteps,
-            "M": mSteps,
-            "R": rSteps
+        test = {
+            "Q": qTest,
+            "S": sTest,
+            "M": mTest,
+            "R": rTest
         }
 
         # Push resullts to main lists
-        test_results.append(res)
-        training_results.append(steps)
+        test_results.append(test)
+        training_results.append(train)
 
     # Calculate averages
     avg_test_results = average_test_results(test_results)

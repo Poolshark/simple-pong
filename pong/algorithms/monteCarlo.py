@@ -86,6 +86,7 @@ class MonteCarlo(Config):
             # Count wins (reward == 1)
             if reward == 1:
                 wins += 1
+                print("MONTE CARLO > wins: ", wins)
 
             if (((episode + 1) % 50 == 0) and render ):
                 avg_steps = np.mean(total_steps[-50:])

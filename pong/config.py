@@ -34,7 +34,7 @@ class Config:
 
         self.training_episodes = params["EPISODES"]
         self.testing_episiodes = params["TESTING_EPISODES"]
-        self.env = SimplifiedPongEnv(grid_size=params["GRID_SIZE"], ball_speed=params["BALL_SPEED"])
+        self.env = SimplifiedPongEnv(grid_size=params["GRID_SIZE"], ball_speed=params["BALL_SPEED"], opponent_ai=params["OPPONENT_AI"])
         self.state_space_size = (params["GRID_SIZE"],) * 4  
 
         # Q-values (SARSA, Q-learning, Monte Carlo)

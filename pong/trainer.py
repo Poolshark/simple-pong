@@ -107,7 +107,7 @@ class Trainer:
         plt.show()
 
 
-    def plot_combined_learning_curve(self, steps: Dict[str, List[int]], save_plots:bool = False, window_size:int = 50, show_title:bool = False, show_legend:bool = False, show_xlabel:bool = False, show_ylabel:bool = False):
+    def plot_combined_learning_curve(self, steps: Dict[str, Dict[str, List[float]]], save_plots:bool = False, window_size:int = 50, show_title:bool = False, show_legend:bool = False, show_xlabel:bool = False, show_ylabel:bool = False):
         """Plot combined learning curves for all algorithms."""
         
         # Use same color scheme as in play.py
@@ -126,53 +126,63 @@ class Trainer:
             'R': 'REINFORCE'
         }
 
-        fig = plt.figure(figsize=(10, 6))
-        ax = plt.gca()
-        plt.grid(True, alpha=0.3)
-        # plt.yscale('log')
-
-        if show_xlabel:
-            plt.xlabel('$E_{training}$', fontsize=16)
-
-        if show_ylabel:
-            plt.ylabel('log(s)', fontsize=16)
+        # Create figure with two y-axes
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+        ax2 = ax1.twinx()
         
-        if show_title:
-            plt.title('Learning Curves - Moving Average of Episode Length', fontsize=16)
-    
-
-        # Set consistent font sizes for both axes
-        ax.tick_params(axis='both', which='major', labelsize=14)
-        ax.tick_params(axis='both', which='minor', labelsize=14)
-        
-        # Add more space for y-axis labels
-        ax.yaxis.set_tick_params(pad=10)
-        
-        # Format y-axis tick labels to be more readable
-        # ax.yaxis.set_major_formatter(plt.ScalarFormatter())
-        # ax.yaxis.get_major_formatter().set_scientific(False)
-        # ax.yaxis.set_tick_params(labelsize=14)  # Explicitly set y-axis font size
-        
-        # Adjust y-axis to avoid overlapping
-        plt.subplots_adjust(left=0.15)  # Make more space for y-axis labels
-
-        for algo, total_steps in steps.items():
-            # Calculate moving average
+        # Plot steps on left y-axis
+        for algo, data in steps.items():
+            # Calculate moving average for steps
             moving_avg = [
-                np.log10(np.mean(total_steps[max(0, i-window_size):i]))
-                for i in range(1, len(total_steps)+1)
+                np.log10(np.mean(data['total_steps'][max(0, i-window_size):i]))
+                for i in range(1, len(data['total_steps'])+1)
             ]
-
-            plt.plot(moving_avg, 
-                    label=algo_names[algo],
+            
+            # Plot steps with solid line
+            ax1.plot(moving_avg, 
+                    label=f'{algo_names[algo]} (steps)',
                     color=algo_colors[algo],
                     linewidth=2)
 
+        # Customize left y-axis (steps)
+        if show_ylabel:
+            ax1.set_ylabel('log(s)', fontsize=16)
+        ax1.tick_params(axis='both', which='major', labelsize=14)
+        ax1.tick_params(axis='both', which='minor', labelsize=14)
+        ax1.grid(True, alpha=0.3)
+        
+        # Plot win rates on right y-axis with dashed lines
+        for algo, data in steps.items():
+            if 'win_rate' in data:
+                print(data['win_rate'])
+
+                # Plot win rate with dashed line
+                ax2.plot(np.ones_like(moving_avg) * data['win_rate'],
+                        label=f'{algo_names[algo]} (win rate)',
+                        color=algo_colors[algo],
+                        linestyle='--',
+                        linewidth=2)
+        
+        # Customize right y-axis (win rate)
+        ax2.set_ylabel('Win Rate', color='gray', fontsize=16)
+        ax2.tick_params(axis='y', labelcolor='gray', labelsize=14)
+        ax2.set_ylim(0, 1)  # Win rate is between 0 and 1
+        
+        if show_xlabel:
+            ax1.set_xlabel('$E_{training}$', fontsize=16)
+        
+        if show_title:
+            plt.title('Learning Curves - Moving Average of Episode Length', fontsize=16)
+        
         if show_legend:
-            plt.legend(loc='upper left', fontsize=12)
+            # Combine legends from both axes
+            lines1, labels1 = ax1.get_legend_handles_labels()
+            lines2, labels2 = ax2.get_legend_handles_labels()
+            ax1.legend(lines1 + lines2, labels1 + labels2, 
+                      loc='upper left', fontsize=12)
         
         plt.tight_layout()
-
+        
         # Create output directory if it doesn't exist
         output_dir = 'output'
         if save_plots and not os.path.exists(output_dir):
