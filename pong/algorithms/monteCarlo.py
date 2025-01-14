@@ -1,10 +1,10 @@
 import numpy as np
 from pong.config import Config
-from typing import List, Dict
+from typing import List, Dict, Literal
 
 class MonteCarlo(Config):
-    def __init__(self) -> None:
-        super().__init__(algo="M")
+    def __init__(self, difficulty: Literal["easy", "medium", "hard", "impossible"] | None = None) -> None:
+        super().__init__(algo="M", difficulty=difficulty)
         
         self.returns = {state: {action: [] for action in range(self.ACTION_SPACE_SIZE)} for state in np.ndindex(self.state_space_size)}
 
@@ -41,7 +41,7 @@ class MonteCarlo(Config):
 
         playing = True
         episode = 0
-        total_steps = []
+        total_steps = np.array([])
         wins = 0
 
         while playing and episode < self.training_episodes:
@@ -81,7 +81,7 @@ class MonteCarlo(Config):
                     break
                 previous_Q = self.Q[state][action]  # Update previous Q-value
 
-            total_steps.append(len(episode_steps))
+            total_steps = np.append(total_steps, len(episode_steps))
 
             # Count wins (reward == 1)
             if reward == 1:

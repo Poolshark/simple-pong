@@ -1,21 +1,17 @@
 import numpy as np
-
-
-
 class OpponentAI():
-    def __init__(self, opponent_ai: str, grid_size: int):
+    def __init__(self, difficulty: str, grid_size: int):
         super().__init__()
 
         self.step_count = 0
         self.grid_size = grid_size
-        if opponent_ai == "easy":
+
+        if difficulty == "easy":
             self.mistake_frequency = 5
-        elif opponent_ai == "medium":
+        elif difficulty == "medium":
             self.mistake_frequency = 10
-        elif opponent_ai == "hard":
+        elif difficulty == "hard":
             self.mistake_frequency = 50
-        elif opponent_ai == "impossible":
-            self.mistake_frequency = 0
     
     def reset(self):
         self.step_count = 0

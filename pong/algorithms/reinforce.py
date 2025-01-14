@@ -1,74 +1,102 @@
 import numpy as np
-from typing import Dict
+from typing import Dict, Literal
 from pong.config import Config
 
 class SimpleReinforce(Config):
-    def __init__(self, algo: str | None = None) -> None:
-        super().__init__(algo="R")
+    def __init__(self, difficulty: Literal["easy", "medium", "hard"] | None = None) -> None:
+        super().__init__(algo="R", difficulty=difficulty)
+        
+        # Initialize policy with preference for staying (action 0)
+        self.policy = np.ones(self.state_space_size + (self.ACTION_SPACE_SIZE,)) * 0.2
+        self.policy[..., 0] = 0.6  # Higher probability for staying still
+        self.policy /= np.sum(self.policy, axis=-1, keepdims=True)
+        
+        # Temperature parameter for exploration
+        self.temperature = 1.0
 
-        # Initialize policy (probabilities for each action in each state)
-        self.policy = np.ones(self.state_space_size + (self.ACTION_SPACE_SIZE,)) / self.ACTION_SPACE_SIZE
+    def choose_action_policy(self, state, training=True):
+        """Choose action using softmax policy with temperature."""
+        if training:
+            # Apply temperature to probabilities
+            probs = self.policy[state] ** (1 / self.temperature)
+            probs /= np.sum(probs)
+            return np.random.choice(self.ACTION_SPACE_SIZE, p=probs)
+        else:
+            return np.argmax(self.policy[state])
 
-    def choose_action_policy(self, state):
-        """Choose action based on policy probabilities."""
-        return np.random.choice(self.ACTION_SPACE_SIZE, p=self.policy[state])
-    
     def train(self, render: bool = False):
-        """
-        Train the agent using the REINFORCE algorithm.
-        """
-
-        total_steps = []
+        """Train the agent using the REINFORCE algorithm."""
+        total_steps = np.array([])
         wins = 0
+        episode_rewards = []  # Track episode rewards for adaptive learning
 
         for episode in range(self.training_episodes):
-            state = self.env.reset()
-            state = tuple(state)
+            state = tuple(self.env.reset())
             trajectory = []
             steps = 0
+            episode_reward = 0
             done = False
 
             # Generate an episode
-            while not done:
-                # Get action probabilities and sample action
-                probs = self.policy[state]
-                action = self.choose_action_policy(state)
+            while not done and steps < self.MAX_STEPS:
+                action = self.choose_action_policy(state, training=True)
                 next_state, reward, done = self.env.step(action)
                 next_state = tuple(next_state)
-                
-                # Store state, action, reward, and log probability
-                # Add small constant for numerical stability
-                log_prob = np.log(probs[action] + 1e-10)  
-                trajectory.append((state, action, reward, log_prob))
+
+                # Reward shaping
+                if reward == 1:  # Win
+                    shaped_reward = 5.0
+                elif reward == -1:  # Loss
+                    shaped_reward = -5.0
+                else:
+                    # Reward for keeping ball in play
+                    ball_x = next_state[1]
+                    paddle_x = next_state[0]
+                    shaped_reward = 0.1 - abs(ball_x - paddle_x) * 0.01  # Small reward for being close to ball
+
+                trajectory.append((state, action, shaped_reward))
+                episode_reward += shaped_reward
                 steps += 1
                 state = next_state
 
-            # Compute returns and update policy using gradient ascent
+            # Store episode reward
+            episode_rewards.append(episode_reward)
+            
+            # Compute returns and update policy
             G = 0
-            for state, action, reward, log_prob in reversed(trajectory):
-                G = reward + self.gamma * G  # Calculate return
-                
-                # Policy gradient update
-                gradient = np.zeros_like(self.policy[state])
-                gradient[action] = G * log_prob  # Policy gradient
-                
-                # Update policy using gradient ascent
-                self.policy[state] += self.alpha * gradient
-                
-                # Normalize to ensure valid probability distribution
-                self.policy[state] = np.clip(self.policy[state], 0, None)
+            for t in reversed(range(len(trajectory))):
+                state, action, reward = trajectory[t]
+                G = reward + self.gamma * G
+
+                # Stronger policy updates for recent episodes with good outcomes
+                if episode_reward > np.mean(episode_rewards[-50:] if len(episode_rewards) > 50 else episode_rewards):
+                    learning_rate = self.alpha * 2
+                else:
+                    learning_rate = self.alpha
+
+                # Update policy more aggressively
+                for a in range(self.ACTION_SPACE_SIZE):
+                    if a == action:
+                        self.policy[state][a] += learning_rate * G
+                    else:
+                        self.policy[state][a] -= learning_rate * G * 0.5
+
+                # Ensure valid probabilities
+                self.policy[state] = np.clip(self.policy[state], 0.05, 0.95)
                 self.policy[state] /= np.sum(self.policy[state])
 
-            total_steps.append(steps)
+            # Decay temperature for exploration
+            self.temperature = max(0.1, self.temperature * 0.995)
 
-            # Count wins (reward == 1)
+            total_steps = np.append(total_steps, steps)
+            
             if reward == 1:
                 wins += 1
+                print(f"REINFORCE > Win {wins} in episode {episode}, steps: {steps}")
 
-            if (((episode + 1) % 50 == 0) and render):
-                avg_steps = np.mean(total_steps[-50:])
-                print(f"Episode {episode + 1}/{self.training_episodes} completed. "
-                      f"Average steps last 50 episodes: {avg_steps:.2f}")
+            if ((episode + 1) % 50 == 0) and render:
+                win_rate = wins / (episode + 1)
+                print(f"Episode {episode + 1}, Steps: {steps}, Win rate: {win_rate:.2f}, Temp: {self.temperature:.2f}")
 
         return {
             'total_steps': total_steps,

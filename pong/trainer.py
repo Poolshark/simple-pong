@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import List, Dict
+from typing import List, Dict, Literal
 from pong.algorithms.qlearning import QLearning
 from pong.algorithms.sarsa import Sarsa
 from pong.algorithms.monteCarlo import MonteCarlo
@@ -14,19 +14,24 @@ class Trainer:
         self.algo = "Q"
         self.algoInstance = None
     
-    def train(self, algo: str = "Q", render: bool = False):
+    def train(self, algo: Literal["Q", "S", "M", "R"] = "Q", difficulty: Literal["easy", "medium", "hard", "impossible"] | None = None, render: bool = False):
         self.algo = algo
 
         if (algo == "Q"):
-            self.algoInstance = QLearning()
+            self.algoInstance = QLearning(difficulty=difficulty)
         elif (algo == "S"):
-            self.algoInstance = Sarsa()
+            self.algoInstance = Sarsa(difficulty=difficulty)
         elif (algo == "M"):
-            self.algoInstance = MonteCarlo()
+            self.algoInstance = MonteCarlo(difficulty=difficulty)
         elif (algo == "R"):
-            self.algoInstance = SimpleReinforce()
+            self.algoInstance = SimpleReinforce(difficulty=difficulty)
 
         return self.algoInstance.train(render=render)
+
+
+    ############################################################
+    # LEGACY
+    ############################################################
 
     def plot_learning_curve(self, window_size: int = 50):
         """

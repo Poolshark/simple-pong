@@ -1,6 +1,7 @@
 import yaml
 import numpy as np
 from pong.environment import SimplifiedPongEnv
+from typing import Literal
 
 # Load parameters from yaml file
 with open('input.yml', 'r') as file:
@@ -16,12 +17,20 @@ class Config:
     # agent does not loose any games anymore.
     MAX_STEPS = 10_000
 
-    def __init__(self, algo: str | None = None) -> None:
+    def __init__(self, algo: Literal["Q", "S", "M", "R"] | None = None, difficulty: Literal["easy", "medium", "hard", "impossible"] | None = None) -> None:
         """
         Initialises the environment and all neccessary parameters for Simple Pong.
 
         This class is the base class for all other sub modules.
         """
+
+        # Plotting parameters
+        self.save_plots = params["SAVE_PLOTS"]
+        self.show_legend = params["SHOW_LEGEND"]
+        self.show_title = params["SHOW_TITLE"]
+        self.show_xlabel = params["SHOW_XLABEL"]
+        self.show_ylabel = params["SHOW_YLABEL"]
+        self.window_size = params["WINDOW_SIZE"]
 
         # Test inmput params
         self._test_input_params()
@@ -32,9 +41,14 @@ class Config:
         else:
             self.algo = params["ALGORITHM"]
 
+        if (difficulty is not None):
+            self.difficulty = difficulty
+        else:
+            self.difficulty = params["DIFFICULTY"]
+
         self.training_episodes = params["EPISODES"]
         self.testing_episiodes = params["TESTING_EPISODES"]
-        self.env = SimplifiedPongEnv(grid_size=params["GRID_SIZE"], ball_speed=params["BALL_SPEED"], opponent_ai=params["OPPONENT_AI"])
+        self.env = SimplifiedPongEnv(grid_size=params["GRID_SIZE"], ball_speed=params["BALL_SPEED"], difficulty=self.difficulty)
         self.state_space_size = (params["GRID_SIZE"],) * 4  
 
         # Q-values (SARSA, Q-learning, Monte Carlo)

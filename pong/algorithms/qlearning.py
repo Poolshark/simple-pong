@@ -1,11 +1,11 @@
 import numpy as np
-from typing import List
+from typing import Dict, Literal
 from pong.config import Config
 
 class QLearning(Config):
     
-    def __init__(self) -> None:
-        super().__init__(algo="Q")
+    def __init__(self, difficulty: Literal["easy", "medium", "hard", "impossible"] | None = None) -> None:
+        super().__init__(algo="Q", difficulty=difficulty)
 
     def choose_action(self, state: tuple, training: bool = True) -> int:
         """
@@ -36,7 +36,7 @@ class QLearning(Config):
             return np.random.choice(self.ACTION_SPACE_SIZE)
         return np.argmax(self.Q[state])
 
-    def train(self, render: bool = False) -> List[int]:
+    def train(self, render: bool = False) -> Dict[Literal["total_steps", "win_rate"], float]:
         """
         Q-learning agent trainer.
 
@@ -48,7 +48,7 @@ class QLearning(Config):
         -------
         List[int]: Steps taken in each episode
         """
-        total_steps = []
+        total_steps = np.array([])
         wins = 0
 
         for episode in range(self.training_episodes):
@@ -71,7 +71,7 @@ class QLearning(Config):
                 state = next_state
                 steps += 1
 
-            total_steps.append(steps)
+            total_steps = np.append(total_steps, steps)
 
             # Count wins (reward == 1)
             if reward == 1:

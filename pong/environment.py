@@ -1,7 +1,7 @@
 import numpy as np
 from pong.oppentAi import OpponentAI
 class SimplifiedPongEnv:
-    def __init__(self, grid_size=10, ball_speed=1, opponent_ai="easy"):
+    def __init__(self, grid_size=10, ball_speed=1, difficulty="easy"):
         """
         Instantiate class.
 
@@ -14,7 +14,7 @@ class SimplifiedPongEnv:
         """
 
         # Opponent AI
-        self.opponent_ai = OpponentAI(opponent_ai, grid_size)
+        self.opponent_ai = OpponentAI(difficulty, grid_size)
 
         # Size of the playing field (grid_size x grid_size)
         self.grid_size = grid_size

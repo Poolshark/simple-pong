@@ -1,10 +1,10 @@
 import numpy as np
-from typing import List
+from typing import List, Literal
 from pong.config import Config
 
 class Sarsa(Config):
-    def __init__(self) -> None:
-        super().__init__(algo="S")
+    def __init__(self, difficulty: Literal["easy", "medium", "hard", "impossible"] | None = None) -> None:
+        super().__init__(algo="S", difficulty=difficulty)
 
     def choose_action(self, state: tuple, training: bool = True) -> int:
         """
@@ -36,7 +36,7 @@ class Sarsa(Config):
         List[int]: Steps taken in each episode
         """
 
-        total_steps = []
+        total_steps = np.array([])
         wins = 0
 
         for episode in range(self.training_episodes):
@@ -64,7 +64,7 @@ class Sarsa(Config):
                 action = next_action
                 steps += 1
 
-            total_steps.append(steps)
+            total_steps = np.append(total_steps, steps)
 
             # Count wins (reward == 1)
             if reward == 1:
