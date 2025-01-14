@@ -18,8 +18,6 @@ class Play:
             self.results = trainer.algoInstance.test(render=render)
         elif (self.algo == "M"):
             self.results = trainer.algoInstance.test(render=render)
-        elif (self.algo == "R"):
-            self.results = trainer.algoInstance.test(render=render)
 
         return self.results
     

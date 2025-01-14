@@ -1,5 +1,4 @@
 import numpy as np
-from pong.config import Config
 from typing import List, Dict, Literal
 from pong.play import Play
 from pong.trainer import Trainer
@@ -11,7 +10,7 @@ class Simulations():
     def difficulty(self):
         
         training_results: Dict[
-            Literal["Q", "S", "M", "R"], 
+            Literal["Q", "S", "M"], 
             Dict[
                 Literal["easy", "medium", "hard"], 
                 Dict[Literal["avg_total_steps", "avg_win_rate"], List[float] | float]
@@ -19,7 +18,7 @@ class Simulations():
         ] = {}
 
 
-        for algo in ["Q", "S", "M", "R"]:
+        for algo in ["Q", "S", "M"]:
             training_results[algo] = {}
             for difficulty in ["easy", "medium", "hard"]:
                 training_results[algo][difficulty] = {}
@@ -55,7 +54,7 @@ class Simulations():
                     
 
         # Average results
-        for algo in ["Q", "S", "M", "R"]:
+        for algo in ["Q", "S", "M"]:
         # for algo in ["Q"]:
             for difficulty in ["easy", "medium", "hard"]:
                 training_results[algo][difficulty]['avg_total_steps'] /= self.num_sims

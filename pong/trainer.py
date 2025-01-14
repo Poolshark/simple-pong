@@ -4,7 +4,6 @@ from typing import List, Dict, Literal
 from pong.algorithms.qlearning import QLearning
 from pong.algorithms.sarsa import Sarsa
 from pong.algorithms.monteCarlo import MonteCarlo
-from pong.algorithms.reinforce import SimpleReinforce
 import os
 
 
@@ -14,7 +13,7 @@ class Trainer:
         self.algo = "Q"
         self.algoInstance = None
     
-    def train(self, algo: Literal["Q", "S", "M", "R"] = "Q", difficulty: Literal["easy", "medium", "hard", "impossible"] | None = None, render: bool = False):
+    def train(self, algo: Literal["Q", "S", "M"] = "Q", difficulty: Literal["easy", "medium", "hard", "impossible"] | None = None, render: bool = False):
         self.algo = algo
 
         if (algo == "Q"):
@@ -23,8 +22,6 @@ class Trainer:
             self.algoInstance = Sarsa(difficulty=difficulty)
         elif (algo == "M"):
             self.algoInstance = MonteCarlo(difficulty=difficulty)
-        elif (algo == "R"):
-            self.algoInstance = SimpleReinforce(difficulty=difficulty)
 
         return self.algoInstance.train(render=render)
 

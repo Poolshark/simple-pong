@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Dict, Literal
-from pong.config import Config
 import os
 
 class Plotter():
@@ -19,20 +18,18 @@ class Plotter():
             'Q': '#2C699A',  # Deep blue
             'S': '#048BA8',  # Teal
             'M': '#0DB39E',  # Turquoise
-            'R': '#16DB93'   # Mint green
         }
         
         self.algo_names = {
             'Q': 'Q-Learning',
             'S': 'SARSA',
             'M': 'Monte Carlo',
-            'R': 'REINFORCE'
         }
 
     
     def plot_comparison_all_algorithms(
         self, 
-        training_results: Dict[Literal["Q", "S", "M", "R"], Dict[Literal["easy", "medium", "hard"], Dict[Literal["avg_total_steps", "avg_win_rate"], List[float] | float]]]
+        training_results: Dict[Literal["Q", "S", "M"], Dict[Literal["easy", "medium", "hard"], Dict[Literal["avg_total_steps", "avg_win_rate"], List[float] | float]]]
     ):
         """
         Create a side-by-side plot comparing all algorithms across difficulty levels.
@@ -56,11 +53,6 @@ class Plotter():
                 'medium': '#FFD700',    # Gold
                 'hard': '#006400',      # Dark Green
             },
-            'R': {
-                'easy': '#00CED1',      # Light Blue
-                'medium': '#20B2AA',    # Light Sea Green
-                'hard': '#008080',      # Teal
-            }
         }
         
         # Line styles for different algorithms
@@ -68,7 +60,6 @@ class Plotter():
             'Q': 'solid',      # Solid line
             'S': 'dashed',     # Dashed line
             'M': 'dashdot',    # Dash-dot line
-            'R': 'dotted'      # Dotted line
         }
         
         # Create figure with two subplots side by side
@@ -103,7 +94,7 @@ class Plotter():
         width = 0.2  # Width of bars
         
         # Plot bars for each algorithm side by side
-        for i, algo in enumerate(['Q', 'S', 'M', 'R']):
+        for i, algo in enumerate(['Q', 'S', 'M']):
             win_rates = [training_results[algo][diff]['avg_win_rate'] for diff in difficulties]
             ax2.bar(x + i*width, 
                     win_rates,
@@ -124,7 +115,7 @@ class Plotter():
 
     def plot_training_results_difficulty(
         self, 
-        training_results: Dict[Literal["Q", "S", "M", "R"], Dict[Literal["easy", "medium", "hard"], Dict[Literal["avg_total_steps", "avg_win_rate"], List[float] | float]]]
+        training_results: Dict[Literal["Q", "S", "M"], Dict[Literal["easy", "medium", "hard"], Dict[Literal["avg_total_steps", "avg_win_rate"], List[float] | float]]]
     ):
         """
         Create a side-by-side plot comparing algorithm performance across difficulty levels.
@@ -136,7 +127,6 @@ class Plotter():
             'easy': '#2ecc71',      # Green
             'medium': '#f1c40f',    # Yellow
             'hard': '#e67e22',      # Orange
-            'impossible': '#e74c3c'  # Red
         }
         
         # Create figure with two subplots side by side
