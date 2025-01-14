@@ -17,20 +17,56 @@ class Simulations():
             ]
         ] = {}
 
+        test_results: Dict[
+            Literal["Q", "S", "M"], 
+            Dict[
+                Literal["easy", "medium", "hard"], 
+                Dict[Literal["avg_steps", "avg_max_steps", "avg_min_steps", "avg_std_steps", "avg_win_rate"], float]
+            ]
+        ] = {}
+
+        # 'avg_steps': np.mean(test_steps),
+        #     'max_steps': np.max(test_steps),
+        #     'min_steps': np.min(test_steps),
+        #     'std_steps': np.std(test_steps),
+        #     'win_rate': wins / self.testing_episiodes
+
 
         for algo in ["Q", "S", "M"]:
             training_results[algo] = {}
+            test_results[algo] = {}
+
             for difficulty in ["easy", "medium", "hard"]:
                 training_results[algo][difficulty] = {}
+                test_results[algo][difficulty] = {
+                    "avg_steps"    : 0,
+                    "avg_max_steps": 0,
+                    "avg_min_steps": 0,
+                    "avg_std_steps": 0,
+                    "avg_win_rate" : 0
+                }
+
                 for i in range(0, self.num_sims):
 
                     # Instantiate trainer and player (agent)
-                    # player = Play()
+                    player = Play()
                     trainer = Trainer()
 
                     # Training results
-                    steps = trainer.train(algo=algo, difficulty=difficulty)["total_steps"]
-                    wins = trainer.train(algo=algo, difficulty=difficulty)["win_rate"]
+                    training = trainer.train(algo=algo, difficulty=difficulty)
+                    steps = training["total_steps"]
+                    wins = training["win_rate"]
+
+                    # Test results
+                    test = player.play(trainer=trainer)
+                    test_results[algo][difficulty] = {
+                        "avg_steps": test_results[algo][difficulty]["avg_steps"] + test["avg_steps"],
+                        "avg_max_steps": test_results[algo][difficulty]["avg_max_steps"] + test["max_steps"],
+                        "avg_min_steps": test_results[algo][difficulty]["avg_min_steps"] + test["min_steps"],
+                        "avg_std_steps": test_results[algo][difficulty]["avg_std_steps"] + test["std_steps"],
+                        "avg_win_rate": test_results[algo][difficulty]["avg_win_rate"] + test["win_rate"]
+                    }
+                    
                     if (i == 0):
                         training_results[algo][difficulty]["avg_total_steps"] = steps
                         training_results[algo][difficulty]["avg_win_rate"] = wins
@@ -48,16 +84,22 @@ class Simulations():
 
                         training_results[algo][difficulty]['avg_total_steps'] = avg_padded + steps_padded
                         
-                        # training_results[algo][difficulty]["avg_total_steps"] = training_results[algo][difficulty]["avg_total_steps"] + steps
                         training_results[algo][difficulty]["avg_win_rate"] = training_results[algo][difficulty]["avg_win_rate"] + wins
                     
                     
 
         # Average results
         for algo in ["Q", "S", "M"]:
-        # for algo in ["Q"]:
             for difficulty in ["easy", "medium", "hard"]:
                 training_results[algo][difficulty]['avg_total_steps'] /= self.num_sims
                 training_results[algo][difficulty]['avg_win_rate'] /= self.num_sims
+                test_results[algo][difficulty]['avg_steps'] /= self.num_sims
+                test_results[algo][difficulty]['avg_max_steps'] /= self.num_sims
+                test_results[algo][difficulty]['avg_min_steps'] /= self.num_sims
+                test_results[algo][difficulty]['avg_std_steps'] /= self.num_sims
+                test_results[algo][difficulty]['avg_win_rate'] /= self.num_sims
 
-        return training_results                    # test  = player.play(trainer=trainer)
+        return {
+            "training_results": training_results,
+            "test_results": test_results
+        }
