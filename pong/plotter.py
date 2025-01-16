@@ -22,6 +22,11 @@ class Plotter():
         self.show_ylabel = params["SHOW_YLABEL"]
         self.window_size = params["WINDOW_SIZE"]
 
+        self.show_test_legend = params["SHOW_TEST_LEGEND"]
+        self.show_test_title = params["SHOW_TEST_TITLE"]
+        self.show_test_xlabel = params["SHOW_TEST_XLABEL"]
+        self.show_test_ylabel = params["SHOW_TEST_YLABEL"]
+
         self.algo_colors = {
             'Q': '#2C699A',  # Deep blue
             'S': '#048BA8',  # Teal
@@ -91,13 +96,13 @@ class Plotter():
         
         # Customize learning curves plot
         if self.show_xlabel:
-            ax1.set_xlabel('$E_{training}$', fontsize=14)
-        ax1.set_ylabel('$log(s)$', fontsize=14)
+            ax1.set_xlabel('$E_{training}$', fontsize=16)
+        ax1.set_ylabel('$log(s)$', fontsize=16)
         ax1.grid(True, alpha=0.3)
-        ax1.tick_params(axis='both', labelsize=12)
+        ax1.tick_params(axis='both', labelsize=14)
 
         if self.show_legend:
-            ax1.legend(fontsize=10, loc='lower right')
+            ax1.legend(fontsize=14, loc='lower right')
 
         # Plot win rates
         difficulties = ['easy', 'medium', 'hard']
@@ -114,15 +119,13 @@ class Plotter():
                     color=[self.algo_colors[algo] ])
         
         # Customize win rate plot
-        ax2.set_ylabel('$P_{win}$', fontsize=14)
+        ax2.set_ylabel('$P_{win}$', fontsize=16)
         ax2.set_xticks(x + width * 1.5)
         ax2.set_xticklabels(difficulties)
-        # if self.show_xlabel:
-        # else:
-        #     ax2.set_xticklabels([])
-        ax2.tick_params(axis='both', labelsize=12)
+        ax2.tick_params(axis='both', labelsize=14)
         ax2.grid(True, axis='y', alpha=0.3)
-        ax2.legend(fontsize=12)
+        if self.show_legend:
+            ax2.legend(fontsize=14)
 
         # Save plot if requested
         if self.save_plots:
@@ -138,18 +141,11 @@ class Plotter():
 
     
     def plot_test_results(self, test_results: Dict[Literal["Q", "S", "M"], Dict[Literal["easy", "medium", "hard"], Dict[Literal["avg_steps", "avg_max_steps", "avg_min_steps", "avg_std_steps", "avg_win_rate"], float]]]):
-        """Plot test results for all algorithms using three bar charts side by side."""
-        # Create figure with three subplots side by side
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
+        """Plot test results for all algorithms using three horizontal bar charts."""
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(6, 8))
         axes = {'Q': ax1, 'S': ax2, 'M': ax3}
         
-        # Create twin axes for win rates
-        ax1_twin = ax1.twinx()
-        ax2_twin = ax2.twinx()
-        ax3_twin = ax3.twinx()
-        twin_axes = {'Q': ax1_twin, 'S': ax2_twin, 'M': ax3_twin}
-        
-        # Metrics to plot and their colors and labels
+        # Metrics info
         metric_info = {
             'avg_steps': {
                 'color': '#2ecc71',     # Green
@@ -166,82 +162,88 @@ class Plotter():
             'avg_std_steps': {
                 'color': '#f1c40f',     # Yellow
                 'label': '$\\sigma$'
-            },
-            'avg_win_rate': {
-                'color': '#9b59b6',     # Purple
-                'label': '$P_{win}$'
             }
         }
         
         step_metrics = ['avg_steps', 'avg_max_steps', 'avg_min_steps', 'avg_std_steps']
         difficulties = ['easy', 'medium', 'hard']
-        width = 0.15
+        height = 0.2
         
-        # Calculate x positions with gaps between difficulty groups
-        gap = 0.8
-        x = np.array([i * (1 + gap) for i in range(len(difficulties))])
+        # Calculate y positions with gaps between difficulty groups
+        gap = 0.3
+        y = np.array([i * (1 + gap) for i in range(len(difficulties))])
         
         # Plot for each algorithm
         for algo, ax in axes.items():
-            twin_ax = twin_axes[algo]
-            
-            # Plot step metrics on primary y-axis
+            # Plot step metrics
             for i, metric in enumerate(step_metrics):
                 values = [test_results[algo][diff][metric] for diff in difficulties]
-                ax.bar(x + i*width, 
-                      values,
-                      width,
-                      label=metric_info[metric]['label'],
-                      color=metric_info[metric]['color'],
-                      alpha=0.7)
-            
-            # Plot win rate on secondary y-axis
-            win_rates = [test_results[algo][diff]['avg_win_rate'] for diff in difficulties]
-            twin_ax.bar(x + 4*width,
-                       win_rates,
-                       width,
-                       label=metric_info['avg_win_rate']['label'],
-                       color=metric_info['avg_win_rate']['color'],
+                ax.barh(y + i*height, 
+                       values,
+                       height,
+                       label=metric_info[metric]['label'],
+                       color=metric_info[metric]['color'],
                        alpha=0.7)
             
-            # Customize primary axis
-            if self.show_title:
-                ax.set_title(f'{self.algo_names[algo]}', fontsize=12)
-            ax.set_xticks(x + 2*width)
-            if self.show_xlabel:
-                ax.set_xticklabels([d.capitalize() for d in difficulties])
+            # Plot win rate as width-scaled bar
+            win_rates = [test_results[algo][diff]['avg_win_rate'] for diff in difficulties]
+            xlim = ax.get_xlim()
+            plot_width = xlim[1] - xlim[0]
+            
+            # Plot win rate bars
+            win_bars = ax.barh(y + 4*height,
+                              [plot_width * wr for wr in win_rates],
+                              height,
+                              color='#9b59b6',  # Purple
+                              alpha=0.7)
+            
+            # Add win rate values at the end of bars
+            for bar, wr in zip(win_bars, win_rates):
+                ax.text(bar.get_width(), 
+                       bar.get_y() + bar.get_height()/2,
+                       f' {wr:.2f}',
+                       va='center',
+                       fontsize=10)
+            
+            # Customize axis
+            if self.show_test_title:
+                # Add title inside plot with semi-transparent background
+                ax.text(0.95, 0.95, 
+                        self.algo_names[algo],
+                        transform=ax.transAxes,
+                        fontsize=14,
+                        # fontweight='bold',
+                        ha='right',
+                        va='top',
+                        bbox=dict(
+                            facecolor='white',
+                            alpha=0.7,
+                            edgecolor='none',
+                            pad=3.0
+                        ))
+            
+            ax.set_yticks(y + 2*height)
+            if self.show_test_ylabel:
+                ax.set_yticklabels(difficulties, 
+                                   rotation=45,
+                                   ha='right',  # Horizontal alignment
+                                   va='center'  # Vertical alignment
+                                   )
             else:
-                ax.set_xticklabels([])  # Hide x-axis labels
-            ax.tick_params(axis='both', labelsize=12)
-            ax.grid(True, axis='y', alpha=0.3)
+                ax.set_yticklabels([])
             
-            # Set reasonable y-axis limits
-            max_value = max([test_results[algo][diff][metric] 
-                            for diff in difficulties 
-                            for metric in step_metrics])
-            ax.set_ylim(0, max_value * 1.1)
+            ax.tick_params(axis='both', labelsize=14)
+            ax.grid(True, axis='x', alpha=0.3)
             
-            # Customize secondary axis
-            twin_ax.set_ylim(0, 1)
-            twin_ax.tick_params(axis='y', labelsize=12)
-            twin_ax.grid(True, axis='y', alpha=0.15, linestyle='--')
-            
-            # Only show legends for first subplot
-            if algo == 'Q':
-                lines1, labels1 = ax.get_legend_handles_labels()
-                lines2, labels2 = twin_ax.get_legend_handles_labels()
-
-                if self.show_legend:
-                    ax.legend(lines1 + lines2, labels1 + labels2,
-                         fontsize=12, 
-                         loc='upper right',
+            # Only show legend for first subplot
+            if algo == 'Q' and self.show_test_legend:
+                ax.legend(fontsize=12, 
+                         loc='lower right',
                          title='Metrics')
             
             # Set labels
-            if algo == 'Q':
-                ax.set_ylabel('$s$', fontsize=14)
-            if algo == 'M':
-                twin_ax.set_ylabel('$P_{win}$', fontsize=14)
+            if algo == 'M' and self.show_test_xlabel:
+                ax.set_xlabel('$s$', fontsize=16)
 
         plt.tight_layout()
         
