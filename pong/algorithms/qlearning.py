@@ -1,52 +1,88 @@
 import numpy as np
-from typing import Dict, Literal
+from typing import Dict, Tuple, Literal
 from pong.config import Config
 
 class QLearning(Config):
+    """
+    Q-Learning implementation for Pong game.
     
-    def __init__(self, difficulty: Literal["easy", "medium", "hard", "impossible"] | None = None) -> None:
-        super().__init__(algo="Q", difficulty=difficulty)
-
-    def choose_action(self, state: tuple, training: bool = True) -> int:
+    Implements the Q-learning algorithm with epsilon-greedy exploration.
+    Q-values are stored in a table mapping state-action pairs to expected returns.
+    
+    Attributes
+    ----------
+    Q : np.ndarray
+        Q-value table storing action values for each state
+    alpha : float
+        Learning rate for Q-value updates
+    gamma : float
+        Discount factor for future rewards
+    epsilon : float
+        Exploration rate for epsilon-greedy policy
+    """
+    
+    def __init__(self, difficulty: Literal["easy", "medium", "hard"] | None = None) -> None:
         """
-        Epsilon-greedy action selection (epsilon-greedy policy). It balances
-        two important aspects of RL:
-        
-        And thus, `np.random.choice(self.action_space_size)` selects the action
-        with the highest Q-value (exploitation). And 
-        `np.random.choice(self.action_space_size)` picks a random action 
-        (exploration).
-
-        The training flag serves 2 purposes:
-
-        1. During training (`training=True`), it explores with a probability of
-            eplision (`np.random.rand() < self.epsilon`), meaning it takes a
-            random action. The agent exploits with a probability of 1-epsilon.
-
-        2. During testing (`training=False`), the agent ALWAYS exploits. This
-            helps to evaluate the actual learned policy without randomness of
-            exploration.
-        
-        ##### Parameters
-        : state    -- The current state-action pair
-        : training -- Flag 
-        """
-
-        if training and np.random.rand() < self.epsilon:
-            return np.random.choice(self.ACTION_SPACE_SIZE)
-        return np.argmax(self.Q[state])
-
-    def train(self, render: bool = False) -> Dict[Literal["total_steps", "win_rate"], float]:
-        """
-        Q-learning agent trainer.
+        Initialize Q-learning agent.
 
         Parameters
         ----------
-        render[bool]: Whether a training output should be rendered or not
+        difficulty : str, optional
+            Game difficulty level ('easy', 'medium', 'hard')
+        """
+        super().__init__(algo="Q", difficulty=difficulty)
+        
+        # Initialize Q-table with zeros
+        self.Q = np.zeros(self.state_space_size + (self.ACTION_SPACE_SIZE,))
+
+    def choose_action(self, state: Tuple[int, ...], training: bool = True) -> int:
+        """
+        Choose action using epsilon-greedy policy.
+
+        During training, selects random action with probability epsilon,
+        otherwise selects action with highest Q-value.
+        During testing, always selects best action.
+
+        Parameters
+        ----------
+        state : tuple of int
+            Current game state (player paddle, ball x, ball y, opponent paddle)
+        training : bool
+            Whether agent is training (True) or testing (False)
 
         Returns
         -------
-        List[int]: Steps taken in each episode
+        int
+            Selected action (0: stay, 1: up, 2: down)
+        """
+        if training and np.random.random() < self.epsilon:
+            # Exploration: choose random action
+            return np.random.randint(self.ACTION_SPACE_SIZE)
+        else:
+            # Exploitation: choose best action
+            return np.argmax(self.Q[state])
+
+    def train(self, render: bool = False) -> Dict[str, float]:
+        """
+        Train the agent using Q-learning.
+
+        For each episode:
+        1. Reset environment
+        2. While episode not done:
+            - Choose action (epsilon-greedy)
+            - Take action, observe next state and reward
+            - Update Q-value using Q-learning update rule
+            - Move to next state
+
+        Parameters
+        ----------
+        render : bool
+            Whether to render training progress
+
+        Returns
+        -------
+        dict
+            Training statistics including total steps and win rate
         """
         total_steps = np.array([])
         wins = 0
@@ -57,51 +93,60 @@ class QLearning(Config):
             steps = 0
 
             while not done:
-                action = self.choose_action(state)
+                # Choose and take action
+                action = self.choose_action(state, training=True)
                 next_state, reward, done = self.env.step(action)
                 next_state = tuple(next_state)
+                steps += 1
 
-                # Update Q-value
-                best_next_action = np.argmax(self.Q[next_state])
+                if steps > self.MAX_STEPS:
+                    print("Q-LEARNING > Agent does not lose games anymore. Breaking out.")
+                    done = True
+
+                # Q-learning update
+                next_max = np.max(self.Q[next_state])
                 self.Q[state][action] += self.alpha * (
-                    reward + self.gamma * self.Q[next_state][best_next_action]
-                    - self.Q[state][action]
+                    reward + 
+                    self.gamma * next_max - 
+                    self.Q[state][action]
                 )
 
                 state = next_state
-                steps += 1
 
             total_steps = np.append(total_steps, steps)
-
+            
             # Count wins (reward == 1)
             if reward == 1:
                 wins += 1
 
-            if (((episode + 1) % 50 == 0) and render ):
-                avg_steps = np.mean(total_steps[-50:])
-                print(f"Episode {episode + 1}/{self.training_episodes} completed. "
-                      f"Average steps last 50 episodes: {avg_steps:.2f}")
+            if ((episode + 1) % 50 == 0) and render:
+                win_rate = wins / (episode + 1)
+                print(f"Episode {episode + 1}, Steps: {steps}, Win rate: {win_rate:.2f}")
 
         return {
             'total_steps': total_steps,
             'win_rate': wins / self.training_episodes
         }
-    
-    def test(self, render: bool = False) -> dict:
+
+    def test(self, render: bool = False) -> Dict[str, float]:
         """
-        Test the trained agent and return performance metrics.
-        
+        Test the trained agent.
+
+        Runs episodes using trained policy (no exploration).
+        Collects statistics on agent performance.
+
         Parameters
         ----------
-        render[bool]: Flag which triggers the environment's render method
+        render : bool
+            Whether to render testing episodes
 
         Returns
         -------
-        Set[float]: Min, max and avg steps per episode. Additionally th standard deviation 
+        dict
+            Testing statistics including average steps and win rate
         """
-
         test_steps = []
-        wins = 0  # Initialize win counter
+        wins = 0
 
         for _ in range(self.testing_episiodes):
             state = tuple(self.env.reset())
@@ -109,20 +154,19 @@ class QLearning(Config):
             steps = 0
             
             while not done:
+                # Choose action (no exploration)
                 action = self.choose_action(state, training=False)
                 next_state, reward, done = self.env.step(action)
-                next_state = tuple(next_state)
-                if render:
-                    self.env.render()
-                state = next_state
+                state = tuple(next_state)
                 steps += 1
 
                 if steps > self.MAX_STEPS:
                     done = True
-            
-            test_steps.append(steps)
 
-            # Count wins (reward == 1)
+                if render:
+                    self.env.render()
+
+            test_steps.append(steps)
             if reward == 1:
                 wins += 1
 

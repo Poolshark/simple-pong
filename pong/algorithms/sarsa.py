@@ -1,100 +1,155 @@
 import numpy as np
-from typing import List, Literal
+from typing import Dict, Tuple, Literal
 from pong.config import Config
 
 class Sarsa(Config):
-    def __init__(self, difficulty: Literal["easy", "medium", "hard", "impossible"] | None = None) -> None:
-        super().__init__(algo="S", difficulty=difficulty)
-
-    def choose_action(self, state: tuple, training: bool = True) -> int:
+    """
+    SARSA (State-Action-Reward-State-Action) implementation for Pong game.
+    
+    Implements the SARSA algorithm with epsilon-greedy exploration.
+    Unlike Q-learning, SARSA is an on-policy algorithm that learns the
+    action-value function for the policy being followed.
+    
+    Attributes
+    ----------
+    Q : np.ndarray
+        Q-value table storing action values for each state
+    alpha : float
+        Learning rate for Q-value updates
+    gamma : float
+        Discount factor for future rewards
+    epsilon : float
+        Exploration rate for epsilon-greedy policy
+    """
+    
+    def __init__(self, difficulty: Literal["easy", "medium", "hard"] | None = None) -> None:
         """
-        Epsilon-greedy action selection (epsilon-greedy policy).
-        Same implementation as with Q-learning. However, the individual
-        learning parameter epsilon, might have a different impact.
-      
-        
+        Initialize SARSA agent.
+
         Parameters
         ----------
-        state   : The current state-action pair
-        training: Flag whether we are training the agent or not
+        difficulty : str, optional
+            Game difficulty level ('easy', 'medium', 'hard')
+        """
+        super().__init__(algo="S", difficulty=difficulty)
+        
+        # Initialize Q-table with zeros
+        self.Q = np.zeros(self.state_space_size + (self.ACTION_SPACE_SIZE,))
+
+    def choose_action(self, state: Tuple[int, ...], training: bool = True) -> int:
+        """
+        Choose action using epsilon-greedy policy.
+
+        During training, selects random action with probability epsilon,
+        otherwise selects action with highest Q-value.
+        During testing, always selects best action.
+
+        Parameters
+        ----------
+        state : tuple of int
+            Current game state (player paddle, ball x, ball y, opponent paddle)
+        training : bool
+            Whether agent is training (True) or testing (False)
 
         Returns
         -------
-        Int: The action which should be taken (up, down, stay)
+        int
+            Selected action (0: stay, 1: up, 2: down)
         """
+        if training and np.random.random() < self.epsilon:
+            # Exploration: choose random action
+            return np.random.randint(self.ACTION_SPACE_SIZE)
+        else:
+            # Exploitation: choose best action
+            return np.argmax(self.Q[state])
 
-        if training and np.random.rand() < self.epsilon:
-            return np.random.choice(self.ACTION_SPACE_SIZE)
-        return np.argmax(self.Q[state])
-
-    def train(self, render: bool = False) -> List[int]:
+    def train(self, render: bool = False) -> Dict[str, float]:
         """
-        SARSA implementation.
+        Train the agent using SARSA.
+
+        For each episode:
+        1. Reset environment and choose initial action
+        2. While episode not done:
+            - Take action, observe next state and reward
+            - Choose next action using current policy
+            - Update Q-value using SARSA update rule
+            - Move to next state-action pair
+
+        Parameters
+        ----------
+        render : bool
+            Whether to render training progress
 
         Returns
         -------
-        List[int]: Steps taken in each episode
+        dict
+            Training statistics including total steps and win rate
         """
-
-        total_steps = np.array([])
+        total_steps = []
         wins = 0
 
         for episode in range(self.training_episodes):
             state = tuple(self.env.reset())
+            # Choose initial action
+            action = self.choose_action(state, training=True)
             done = False
             steps = 0
 
-            # Choose initial action using current policy
-            action = self.choose_action(state)
-
             while not done:
+                # Take action and observe result
                 next_state, reward, done = self.env.step(action)
                 next_state = tuple(next_state)
+                steps += 1
+
+                if steps > self.MAX_STEPS:
+                    print("SARSA > Agent does not lose games anymore. Breaking out.")
+                    done = True
 
                 # Choose next action using current policy
-                next_action = self.choose_action(next_state)
+                next_action = self.choose_action(next_state, training=True)
 
-                # Update Q-value using SARSA update rule
+                # SARSA update
                 self.Q[state][action] += self.alpha * (
-                    reward + self.gamma * self.Q[next_state][next_action]
-                    - self.Q[state][action]
+                    reward + 
+                    self.gamma * self.Q[next_state][next_action] - 
+                    self.Q[state][action]
                 )
 
                 state = next_state
                 action = next_action
-                steps += 1
 
-            total_steps = np.append(total_steps, steps)
-
+            total_steps.append(steps)
+            
             # Count wins (reward == 1)
             if reward == 1:
                 wins += 1
 
-            if (((episode + 1) % 50 == 0) and render ):
-                avg_steps = np.mean(total_steps[-50:])
-                print(f"Episode {episode + 1}/{self.training_episodes} completed. "
-                      f"Average steps last 50 episodes: {avg_steps:.2f}")
+            if ((episode + 1) % 50 == 0) and render:
+                win_rate = wins / (episode + 1)
+                print(f"Episode {episode + 1}, Steps: {steps}, Win rate: {win_rate:.2f}")
 
         return {
             'total_steps': total_steps,
             'win_rate': wins / self.training_episodes
         }
-    
 
-    def test(self, render: bool = False) -> dict:
+    def test(self, render: bool = False) -> Dict[str, float]:
         """
-        Test the trained agent and return performance metrics.
-        Same implementation as with Q-learning.
-        
+        Test the trained agent.
+
+        Runs episodes using trained policy (no exploration).
+        Collects statistics on agent performance.
+
         Parameters
         ----------
-        render[bool]: Flag which triggers the environment's render method
+        render : bool
+            Whether to render testing episodes
 
         Returns
         -------
-        Set[float]: Min, max and avg steps per episode. Additionally th standard deviation 
+        dict
+            Testing statistics including average steps and win rate
         """
-
         test_steps = []
         wins = 0
 
@@ -104,20 +159,19 @@ class Sarsa(Config):
             steps = 0
             
             while not done:
+                # Choose action (no exploration)
                 action = self.choose_action(state, training=False)
                 next_state, reward, done = self.env.step(action)
-                next_state = tuple(next_state)
-                if render:
-                    self.env.render()
-                state = next_state
+                state = tuple(next_state)
                 steps += 1
 
                 if steps > self.MAX_STEPS:
                     done = True
-            
-            test_steps.append(steps)
 
-            # Count wins (reward == 1)  
+                if render:
+                    self.env.render()
+
+            test_steps.append(steps)
             if reward == 1:
                 wins += 1
 
